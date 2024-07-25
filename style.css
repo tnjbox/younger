@@ -1,0 +1,66 @@
+/* style.css */
+#buttons-container {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-gap: 10px;
+  padding: 20px;
+}
+
+button {
+  position: relative;
+  padding: 10px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  overflow: hidden;
+}
+
+button img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  object-fit: contain;
+  z-index: 1;
+}
+
+button span {
+  position: relative;
+  z-index: 2;
+  color:#BF0AFF ; /* 設定文字顏色以增加可讀性 */
+}
+
+#controls-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+#controls-container > * {
+  display: flex;
+  flex: 1; /* 使所有子元素等寬 */
+ // justify-content: space-between;
+  margin: 0 10px; /* 調整間距以適應所有元件 */
+  font-size: 16px; /* 設定字型大小為20 */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#load-data,
+#toggle-update,
+#batch-upload,
+#upload-grade {
+  background-color: #0FC96E; /* 淺綠色背景 */
+  border: none; /* 移除邊框 */
+  padding: 10px 0; /* 增加內距以適應字型大小 */
+  cursor: pointer; /* 鼠標懸停時顯示指針 */
+  color: #ffffff;
+}
+
+#row-selector,
+#assignment-name {
+  padding: 10px; /* 增加內距以適應字型大小 */
+}

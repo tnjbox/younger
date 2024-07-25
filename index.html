@@ -1,253 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Younger成績紀錄表</title>
-    <style>
-        #button-container {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-gap: 10px;
-            padding: 20px;
-        }
-
-		button, select {
-            padding: 10px;
-            font-size: 16px;
-            color: #000;
-        }
-
-        #reset-button, #load-data-button, #upload-data-button, #open-link-button {
-            margin-top: 20px;
-            padding: 10px;
-            font-size: 20px;
-            background-color: #CF26FC; /* 淺紫色 */
-            color: #FFFFFF;
-        }
-	#controls-container {
-    display: flex;
-    justify-content: space-between;
-    padding: 20px;
-    box-sizing: border-box;
-}
-button {
-    padding: 10px;
-    font-size: 16px;
-    color: #000;
-    width: 100%; /* 確保按鈕寬度填滿容器 */
-    height: 60px; /* 設定按鈕高度 */
-    background-size: contain; /* 確保背景圖片按比例調整大小，完全顯示 */
-    background-position: center; /* 背景圖片居中顯示 */
-    background-repeat: no-repeat; /* 防止背景圖片重複 */
-    position: relative; /* 為了讓文字能夠正確顯示在圖片之上 */
-    overflow: hidden; /* 防止背景圖片溢出按鈕邊界 */
-    border: none; /* 可選，移除按鈕邊框 */
-}
-
-#controls-container > * {
-    flex: 1; /* 使下拉選單和按鈕平均分配空間 */
-    margin: 0 10px; /* 在元素之間添加一些間隔 */
-}
-
-/* 如果需要，可以進一步調整下拉選單和按鈕的樣式 */
-select, button {
-    padding: 10px;
-    font-size: 16px;
-}
-    </style>
+<meta charset="UTF-8">
+<title>按鈕計數器與數據加載</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="controls-container">
-    <select id="column-selector">
-        <option value="A" selected>902</option>
-        <option value="B">903</option>
-        <option value="C">904</option>
-        <option value="D">905</option>
-        <option value="E">906</option>
-        <option value="F">907</option>
-    </select>
-    <button id="reset-button">重置歸零</button>
-    <button id="load-data-button">讀取暫存資料</button>
-    <button id="upload-data-button">上傳暫存資料</button>
-	<button id="open-link-button">上傳階段成績</button> 
-	<input type="text" id="assignmentInput" placeholder="作業名稱" value="1-1"> <!-- 預設文字設為1-1 -->
-	
+<div id="controls-container">
+  <select id="row-selector">
+    <option value="1">902</option>
+    <option value="2">903</option>
+    <option value="3">904</option>
+    <option value="4">905</option>
+    <option value="5">906</option>
+    <option value="6">907</option>
+    <option value="7">社團</option>
+    <option value="8">YDWS</option>
+  </select>
+  <button id="load-data">載入數據</button>
+  <button id="toggle-update">即時: 關閉</button>
+  <button id="batch-upload">批次上傳</button>
+  <button id="upload-grade">階段成績上傳</button>
+  <input type="text" id="assignment-name" placeholder="作業名稱">
 </div>
-    <div id="button-container"></div>
-
-    <script>
-let cellcodes = [
-  "&entry.718101403=",
-  "&entry.1318922371=",
-  "&entry.1230175307=",
-  "&entry.592471342=",
-  "&entry.877475015=",
-  "&entry.2075799218=",
-  "&entry.2040945089=",
-  "&entry.1340285975=",
-  "&entry.1440098290=",
-  "&entry.632227523=",
-  "&entry.640156032=",
-  "&entry.1793334640=",
-  "&entry.1839436303=",
-  "&entry.979289804=",
-  "&entry.2065518604=",
-  "&entry.102005139=",
-  "&entry.620398395=",
-  "&entry.1697584349=",
-  "&entry.394221030=",
-  "&entry.2019398924=",
-  "&entry.613239977=",
-  "&entry.1035836444=",
-  "&entry.1597037367=",
-  "&entry.988735466=",
-  "&entry.1940537815=",
-  "&entry.1028492409=",
-  "&entry.1130809079=",
-  "&entry.679361978=",
-  "&entry.142512330=",
-  "&entry.1404307868=",
-  "&entry.1320359478=",
-  "&entry.640668047="
-  // 省略其他cellcodes以節省空間
-];
-	
-	
-		document.addEventListener('DOMContentLoaded', async function() {
-            const container = document.getElementById('button-container');
-            const buttonValues = new Array(30).fill(0); // 初始化30個按鈕的值為0
-            const buttons = [];
-            const columnSelector = document.getElementById('column-selector');
-
-            function updateButtonColor(button, value) {
-                const colors = ['#D3D3D3', '#FFC0CB', '#FFA07A', '#FFFFE0', '#90EE90', '#ADD8E6'];
-                button.style.backgroundColor = colors[value] || colors[5]; // 如果值大於5，則使用藍色
-            }
-
-			function updateButtonBackground(button, value) {
-				button.style.backgroundImage = `url('images/${value}.png')`;
-			}
-            function updateButtons() {
-				for (let i = 0; i < buttonValues.length; i++) {
-					buttons[i].textContent = `${i + 1}:${buttonValues[i]}`;
-					updateButtonBackground(buttons[i], buttonValues[i]); // 更新按鈕背景圖片
-				}
-			}
-			
-			
-
-
-            for (let i = 0; i < 30; i++) {
-                const button = document.createElement('button');
-                button.id = `btn-${i}`;
-                button.textContent = `${i + 1}:${buttonValues[i]}`;
-                updateButtonColor(button, buttonValues[i]);
-                button.addEventListener('click', function() {
-                    buttonValues[i] = (buttonValues[i] + 1) % 6;
-                    updateButtons();
-                });
-                container.appendChild(button);
-                buttons.push(button);
-            }
-updateButtons();
-            const resetButton = document.getElementById('reset-button');
-            resetButton.addEventListener('click', function() {
-                for (let i = 0; i < buttonValues.length; i++) {
-                    buttonValues[i] = 0;
-                }
-                updateButtons();
-            });
-
-            
-			const loadDataButton = document.getElementById('load-data-button');
-            loadDataButton.addEventListener('click', async function() {
-                const selectedColumn = columnSelector.value;
-                const urltem1 = 'https://script.google.com/macros/s/AKfycbzRTp8lZTHxl3m4ggoHuDfvkkIgsH1yF6SZ85iG84g4DdZvMKV_G9jkOnbqVeEOfVk/exec';
-				
-				//let SELECTITEM = 'A'; // 假設SELECTITEM的初始值為'A'
-
-switch (selectedColumn) {
-    case 'A':
-        var urltem2 = '?column=A';
-        break;
-    case 'B':
-        var urltem2 = '?column=B';
-        break;
-    case 'C':
-        var urltem2 = '?column=C';
-        break;
-    case 'D':
-        var urltem2 = '?column=D';
-        break;
-    case 'E':
-        var urltem2 = '?column=E';
-        break;
-    case 'F':
-        var urltem2 = '?column=F';
-        break;
-    default:
-        var urltem2 = '?column=G'; // 如果SELECTITEM不是A、B、C中的任何一個，TEMO為undefined
-        break;
-};
-				
-	
-				
-				
-				const url = urltem1 + urltem2;
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    for (let i = 0; i < data.length; i++) {
-                        buttonValues[i] = data[i];
-                    }
-                    updateButtons();
-                } catch (error) {
-                    console.error('Error loading data:', error);
-                }
-            });
-			
-
-            const uploadDataButton = document.getElementById('upload-data-button');
-            uploadDataButton.addEventListener('click', async function() {
-                const selectedColumn = columnSelector.value;
-                const url = 'https://script.google.com/macros/s/AKfycbzRTp8lZTHxl3m4ggoHuDfvkkIgsH1yF6SZ85iG84g4DdZvMKV_G9jkOnbqVeEOfVk/exec'; // 替換成您的Web應用URL
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        contentType: 'application/json',
-                        body: JSON.stringify({column: selectedColumn, values: buttonValues})
-                    });
-                    const result = await response.json();
-                    console.log(result);
-                } catch (error) {
-                    console.error('Error uploading data:', error);
-                }
-            });
-			
-    const openLinkButton = document.getElementById('open-link-button');
-    openLinkButton.addEventListener('click', function() {
-  var baseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeG_MLjtQzECzNeKKYvxoflujc7X4i2T3UcG-vdb8B6hx1Mpg/formResponse?usp=pp_url';
-
-  var queryParams = "";
-  for (let i = 0; i < buttonValues.length; i++) {
-    queryParams += cellcodes[i+2] + buttonValues[i];	
-  }
-  var classText = document.getElementById('column-selector').value;
-  var assignmentText = document.getElementById('assignmentInput').value;
-  queryParams += cellcodes[0] + encodeURIComponent(classText);
-  queryParams += cellcodes[1] + encodeURIComponent(assignmentText);
-  
-  var submitUrl = baseUrl + queryParams;
-  // 使用fetch發送請求，不讀取回應，也不開新視窗
-  fetch(submitUrl, {mode: 'no-cors'}).then(() => console.log('Submitted successfully')).catch((error) => console.error('Submission error', error));        
-		
-		
-		
-    });			
-        });
-		
-		
-    </script>
+<div id="buttons-container"></div>
+<script src="script.js"></script>
 </body>
 </html>
