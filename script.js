@@ -16,17 +16,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const URL1 = 'https://script.google.com/macros/s/AKfycbyppQc68QzzSExSsyAV6l5d1rgUSJxAcYnWEljonF-nCgrpFVaKsK9_wUZuY8OjNu4/exec';
 
   // 初始化按鈕和對應的變數值
-  for (let i = 0; i < 30; i++) {
-    const button = document.createElement('button');
-    button.innerHTML = `<img src="images/0.png" alt=""><span>${i + 1} (${0})</span>`;
+  for (let i = 0; i < 70; i++) {
+	const button = document.createElement('button');
+    
+	if ( i<30){
+		button.innerHTML = `<img src="images/0.png" alt=""><span>${i + 1} (${0})</span>`;
+	} else if (i<40)  {
+		button.innerHTML = `<br><br>`;
+	} else {
+		button.innerHTML = `<img src="images/0.png" alt=""><span>${i - 39} (${0})</span>`;
+	}
+		
+		
     button.dataset.value = 0;
     button.addEventListener('click', function() {
       let value = parseInt(button.dataset.value, 10);
       value = (value + 1) % 6;
       button.dataset.value = value;
-      button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i + 1} (${value})</span>`;
-
-      // 如果即時更新狀態為開啟，則將變數值寫入試算表
+	  if (i<30) {
+		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i + 1} (${value})</span>`;
       if (isUpdateEnabled) {
         const selectedRow = rowSelector.value;
         const column = i + 1; // 按鈕編號對應的欄(column)
@@ -35,10 +43,18 @@ document.addEventListener('DOMContentLoaded', function() {
           .then(response => response.json())
           .then(data => console.log('Update response:', data))
           .catch(error => console.error('Error:', error));
-      }
+      }		
+		
+	  }	else {
+		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i - 39} (${value})</span>`;
+	  }
+      // 如果即時更新狀態為開啟，則將變數值寫入試算表
+	  
+
     });
     container.appendChild(button);
   }
+
 
   loadDataButton.addEventListener('click', function() {
 	if (confirm('確定要載入暫存數據嗎？')) {
