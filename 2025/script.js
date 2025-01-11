@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // 設定Apps Script網頁應用程式的基本URL
-  const URL1 = 'https://script.google.com/macros/s/AKfycbx3mUiySKilf5nqJdMOjBu9vHRC6NDxK-yioe9W6EltHWT2zNN7uo59nTtH4D2ZhsUl/exec';
+  const URL1 = 'https://script.google.com/macros/s/AKfycbwV3I4MWL6D7UaLsDZ7KrJDU9oB92wFET40aGSjyNP5Hf-uIeTUMmwTcBwEMHgTKHtb/exec';
 
   // 初始化按鈕和對應的變數值
   for (let i = 0; i < 30; i++) {
