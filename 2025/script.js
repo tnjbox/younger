@@ -1,8 +1,8 @@
 // script.js
 document.addEventListener('DOMContentLoaded', function() {
   const container = document.getElementById('buttons-container');
-  //const loadDataButton = document.getElementById('load-data');
-  //const rowSelector = document.getElementById('row-selector');
+  const loadDataButton = document.getElementById('load-data');
+  const rowSelector = document.getElementById('row-selector');
   const toggleUpdateButton = document.getElementById('toggle-update');
   let isUpdateEnabled = false; // 追蹤即時更新狀態
 
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // 設定Apps Script網頁應用程式的基本URL
-  const URL1 = 'https://script.google.com/macros/s/AKfycbyppQc68QzzSExSsyAV6l5d1rgUSJxAcYnWEljonF-nCgrpFVaKsK9_wUZuY8OjNu4/exec';
+  const URL1 = 'https://script.google.com/macros/s/AKfycbx3mUiySKilf5nqJdMOjBu9vHRC6NDxK-yioe9W6EltHWT2zNN7uo59nTtH4D2ZhsUl/exec';
 
   // 初始化按鈕和對應的變數值
   for (let i = 0; i < 30; i++) {
