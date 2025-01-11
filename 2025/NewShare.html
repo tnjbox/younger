@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成績統計上傳</title>
+    <style>
+        .student-button {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+            width: 100px;
+        }
+        .student-button img {
+            display: block;
+            margin: 0 auto;
+        }
+        .student-row {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <script>
+        function incrementScore(button) {
+            let score = parseInt(button.dataset.score);
+            score++;
+            button.dataset.score = score;
+            button.querySelector('img').src = `images/${score}.png`;
+            button.querySelector('.score').textContent = `值: ${score}`;
+        }
+    </script>
+</head>
+<body>
+    <h1>成績統計上傳</h1>
+    <label for="class-select">選擇班級:</label>
+    <select id="class-select">
+        <option value="901">901</option>
+        <option value="902">902</option>
+        <option value="903">903</option>
+        <option value="904">904</option>
+        <option value="905">905</option>
+    </select>
+    <div id="students">
+        <!-- 生成30個學生按鈕 -->
+        <script>
+            for (let row = 0; row < 5; row++) {
+                document.write('<div class="student-row">');
+                for (let col = 1; col <= 6; col++) {
+                    let studentNumber = row * 6 + col;
+                    document.write(`
+                        <div class="student-button">
+                            <p>座號: ${studentNumber}</p>
+                            <button data-score="0" onclick="incrementScore(this)">
+                                <img src="images/0.png" alt="Score 0">
+                                <p class="score">值: 0</p>
+                            </button>
+                        </div>
+                    `);
+                }
+                document.write('</div>');
+            }
+        </script>
+    </div>
+</body>
+</html>
