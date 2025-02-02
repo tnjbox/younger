@@ -1,0 +1,84 @@
+/* style.css */
+
+body {
+      font-size: 2em;
+
+      justify-content: center;
+      align-items: center;
+      height: 50vh;
+      margin: 0;
+    }
+
+button {
+  position: relative;
+  padding: 10px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  overflow: hidden;
+}
+
+
+
+
+title-name {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  margin: 0 auto;
+}
+
+#controls-container {
+  width: 90%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  margin: 0 auto;
+}
+
+#controls-container > * {
+  display: flex;
+  flex: 1; /* 使所有子元素等寬 */
+ // justify-content: space-between;
+  margin: 0 10px; /* 調整間距以適應所有元件 */
+  font-size: 20px; /* 設定字型大小為20 */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.chart-container {
+            width: 70%;
+            margin: 0 auto;
+        }
+.option-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+		}		
+#load-data,
+#clear-Data {
+  background-color: #0FC96E; /* 淺綠色背景 */
+  border: none; /* 移除邊框 */
+  padding: 10px 0; /* 增加內距以適應字型大小 */
+  cursor: pointer; /* 鼠標懸停時顯示指針 */
+  color: #ffffff;
+}
+
+table {
+    border-collapse: collapse;
+    width: 90%;
+    background-color: #d4edda;
+    color: #000;
+    font-size: 24px;
+    margin: 0 auto;			
+}
+th, td {
+    border: 1px solid #000;
+    text-align: left;
+    padding: 8px;
+}
+th {
+    background-color: #c3e6cb;
+}

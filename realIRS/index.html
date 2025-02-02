@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IRS互動-學員端</title>
+  <style>
+    body {
+      font-size: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 50vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+    }
+    button {
+      font-size: 2em;
+      padding: 10px 20px;
+      margin: 5px;
+      background-color: #d4edda; /* 淺綠色背景 */
+      border: none;
+      cursor: pointer;
+    }
+    input[type="text"] {
+      font-size: 1em;
+      padding: 5px;
+      margin-bottom: 20px;
+    }
+  </style>
+  <script>
+    function submitChoice(choice) {
+      var name = document.getElementById('name').value;
+      if (name === '') {
+        alert('請輸入姓名');
+        return;
+      }
+    const URL1 = 'https://script.google.com/macros/s/AKfycbxUc3BbVivUmZUpmjklabjSU7GJLiXVIA0C15mB8bCQTb3QMGE_OAUT5Q_GV9rGsiw9/exec'; 
+	const uploadURL = `${URL1}?action=writeData&name=${name}&choice=${choice}`;
+	fetch(uploadURL)
+      .then(response => response.json())
+      .then(data => {
+	  console.log('Grade upload response:', data);
+	  if (data.status === 'success') {
+          alert('提交成功');
+        } else {
+          alert('提交失敗');
+        }
+	  });
+    }
+  </script>
+</head>
+<body>
+<div class="container">
+	<h1>IRS互動-學員端</h1>
+    <label for="name">姓名：</label>
+    <input type="text" id="name" name="name"><br><br>
+    <button onclick="submitChoice('A')">A</button>
+    <button onclick="submitChoice('B')">B</button>
+    <button onclick="submitChoice('C')">C</button>
+    <button onclick="submitChoice('D')">D</button>
+    <button onclick="submitChoice('E')">E</button>
+</div>
+</body>
+</html>

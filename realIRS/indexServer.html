@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>IRS互動-教師端</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body align="center">
+    <div id="title-name">
+	<h1>IRS互動-教師端</h1>
+	</div>
+	<div class="chart-container">
+        <canvas id="myBarChart"></canvas>
+    </div>
+	<br><br>
+	<div id="controls-container">
+	  <button id="load-data">更新答題狀況</button>
+	  <button id="clear-Data">重置數據</button>
+	</div>
+	<br><br>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>選項</th>
+                <th>答題者資訊</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+        </tbody>
+    </table>
+<script src="script-server.js"></script>
+
+</body>
+</html>
