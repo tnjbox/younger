@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     button.dataset.value = 0;
     button.addEventListener('click', function() {
       let value = parseInt(button.dataset.value, 10);
-      value = (value + 1) % 21;
+      value = (value + 1) % 11;
       button.dataset.value = value;
 	  if (i<30) {
 		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i + 1} (${value})</span>`;
