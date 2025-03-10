@@ -1,0 +1,338 @@
+﻿<!DOCTYPE HTML PUBLIC>
+<style type="text/css">
+        #Header {
+                width: 1280px;
+                height: 160px;
+                text-align: center;
+                line-height: 160px;
+                font-size: 75px;
+                color:blue;
+                font-weight: bold;
+                background-color: ;
+				margin: auto;
+        }
+
+        #Sidebar {
+                width: 160px;
+                float: left;
+                height: 400px;
+                text-align: center;
+				text-align: center;
+                line-height: 280px;
+                font-size: 15px;
+                color:#f9c81e ;
+                font-weight: bold;
+                background-color:;
+        }
+
+        #Sidebar2 {
+                width: 260px;
+                float: left;
+                height: 400px;
+                text-align: center;
+				text-align: center;
+                line-height: 280px;
+                font-size: 15px;
+                color:#f9c81e ;
+                font-weight: bold;
+                background-color:;
+				float: left;
+        }
+        #body {
+                width: 810px;
+                height: 400px;
+                text-align: center;
+                line-height: 280px;
+                font-size: 15px;
+                color: #f9c81e;
+                font-weight: bold;
+                background-color: ;
+                float: left;
+        }
+
+        #Footer {
+                width: 1280px;
+                height: 120px;
+                text-align: center;
+                line-height: 120px;
+                font-size: 15px;
+                color: #CCDDEE;
+                font-weight: bold;
+                background-color: ;
+				margin: auto;
+        }
+
+</style>
+
+<html>
+	<head>
+		<title>AIOT CONTROL PANEL</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<script type="text/javascript">
+
+		</script>
+
+	</head>
+	<body class="is-preload">
+		<br>
+		<center>
+		<div style="background-image:url(image/back.PNG);width:1280px;height:720px;border:2px #ccc solid;padding20px">
+			<div id="Header">AIoT Web-based Control Panel</div>
+			<div id="Sidebar">
+				<table>
+					<tr><td width="160" height="100" align="center" valign="middle"><img src="image/ap.png" width="80" height="80"></td></tr>
+					<tr><td width="160" height="100" align="center" valign="middle"><img src="image/temp.png" width="80" height="80"></td></tr>
+					<tr><td width="160" height="100" align="center" valign="middle"><img src="image/light1.png" width="80" height="80"></td></tr>
+					<tr><td width="160" height="100" align="center" valign="middle"><img src="image/light2.png" width="80" height="80"></td></tr>
+				</table>
+			</div>
+			<div id="sidebar2">
+				<table >
+					<tr><td width="260" height="100" align="left" valign="middle"><span style="font-family:Microsoft JhengHei;font-size:36px" id="ipsetup">192.168.1.10</span></td></tr>
+					<tr><td width="260" height="100" align="left" valign="middle"><span style="font-family:Microsoft JhengHei;font-size:36px" id="temp">24</span> <span style="font-family:Microsoft JhengHei;font-size:36px">&deg;C</span><br></td></tr>
+					<tr><td width="260" height="100" align="left" valign="middle"><span style="font-family:Microsoft JhengHei;font-size:36px" id="potA">1211</span></td></tr>
+					<tr><td width="260" height="100" align="left" valign="middle"><span style="font-family:Microsoft JhengHei;font-size:36px" id="potB">198</span></td></tr>
+				</table>			
+			</div>
+			
+			<div id="Body">
+				<table>
+					<tr>
+						<td width="660" rowspan="4">
+							<font style="color:red">Red 紅:<span id="rgb1">0</span></font><br>
+							<input type="range" style="width: 560px; height: 60px;" id="rgb_R" min="0" max="255" value="0" step="1" onchange="sendDac(1,this.value);"><br>
+							<font style="color:green">Green 綠:<span id="rgb2">0</span></font><br>
+							<input type="range" style="width: 560px; height: 60px;" id="rgb_G" min="0" max="255" value="0" step="1" onchange="sendDac(2,this.value);"><br>
+							<font style="color:blue">Blue 藍:<span id="rgb3">0</span></font><br>
+							<input type="range" style="width: 560px; height: 60px;" id="rgb_G" min="0" max="255" value="0" step="1" onchange="sendDac(3,this.value);"><br>
+							<span style="font-family:Microsoft JhengHei;font-size:36px" id="tempBox">語音辨識結果</span>	
+						</td>
+						<td width="200" height="100" aligh="center" valigh="middle"><a href="#" onClick="ipsetup()"><img src="image/wifi.png" width="80" height="80"></a></td></tr>
+					<tr></td><td width="200" height="100" aligh="center" valigh="middle"><a href="#" onClick="startButton(event)"><img src="image/speech.png" width="80" height="80"></a><BR/></td></tr>
+					<tr></td><td width="200" height="100" aligh="center" valigh="middle"><a href="#" onClick="speak()"><img src="image/sound.png" width="80" height="80"></a></td></tr>
+					<tr></td><td width="200" height="100" aligh="center" valigh="middle"><a href="#" onClick="readme()"><img src="image/cc.png" width="80" height="80"></a></td></tr>
+				</table>
+			</div>
+			<div id="Footer">
+				<center><table aligh="center"><tr>
+					<td width="110" height="120"><a href="#" onClick="IoControl(1)"><img src="image/1.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(2)"><img src="image/2.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(3)"><img src="image/3.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(4)"><img src="image/4.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(5)"><img src="image/5.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(6)"><img src="image/6.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(7)"><img src="image/7.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(8)"><img src="image/8.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(9)"><img src="image/9.png" width="80" height="80"></a></td>
+					<td width="110" height="120"><a href="#" onClick="IoControl(0)"><img src="image/0.png" width="80" height="80"></a></td>
+					
+				</tr></table></center>
+			</div>
+		</div></center><br>
+	<script src="image/WebBaseIOT.js"></script> 
+	<script>		
+		//預設的IP值
+		var ip = "192.168.4.1"
+		
+		//呼叫模組化函數 LED+Pin
+		function IoControl(Pin){
+			var ip = $("#ipsetup").text();
+			var url = "http://" + ip + "/LED=" +Pin;
+			$.getJSON(url, function(data){
+			});
+		}	
+		//呼叫傳送類比控制腳位及數值
+		function sendDac(Pin,value){
+			var ip = $("#ipsetup").text();
+			var url = "http://" + ip + "/rgb" + Pin + "=" + value;
+			var ttt = "#rgb" + Pin;
+			$(ttt).text(value);
+			$.getJSON(url, function(data){					
+			});
+		}
+		//IP設定
+		function ipsetup() {
+			var jp = prompt('請設定IP',"192.168.1.");
+			$("#ipsetup").text(jp);
+			//alert(jp);
+		}
+		//語音辨識回應文字轉語音
+		function aispeak(text) {
+			var synth = window.speechSynthesis;
+			var voices = [];
+			if (synth.speaking) {
+				console.error('speechSynthesis.speaking');
+				return;
+			} 
+			var utterThis = new SpeechSynthesisUtterance(text);
+			utterThis.onend = function (event) {
+				console.log('SpeechSynthesisUtterance.onend');
+			}
+			utterThis.onerror = function (event) {
+				console.error('SpeechSynthesisUtterance.onerror');
+			}
+			utterThis.voice = voices[14];//設定國家
+			utterThis.pitch = 1;
+			utterThis.rate = 1;
+			synth.speak(utterThis);
+		}
+		//環境變數文字轉語音播報
+		function speak() {
+			var synth = window.speechSynthesis;
+			var voices = [];
+			if (synth.speaking) {
+				console.error('speechSynthesis.speaking');
+				return;
+			} 
+			var txtx = "現在溫度," + $("#temp").text() + "度，左邊照度 " + $("#potA").text() + "，右邊照度 " + $("#potB").text()
+			var utterThis = new SpeechSynthesisUtterance(txtx);
+			utterThis.onend = function (event) {
+				console.log('SpeechSynthesisUtterance.onend');
+			}
+			utterThis.onerror = function (event) {
+				console.error('SpeechSynthesisUtterance.onerror');
+			}
+			utterThis.voice = voices[14];//設定國家
+			utterThis.pitch = 1;
+			utterThis.rate = 1;
+			synth.speak(utterThis);
+		}
+		
+		//全域變數設定(應用於各函數間)
+		var textBox; // 最終的辨識訊息 text input
+		var tempBox; // 中間的辨識訊息 text input
+		var startStopButton; // 「辨識/停止」按鈕
+		var recognizing = false; // 是否辨識中
+		var final_transcript = ''; // 最終的辨識訊息的變數
+		//麥克風語音辨識啟動/結束	
+		function startButton(event) {
+			//startStopButton = document.getElementById("startStopButton"); // 取得「辨識/停止」這個按鈕控制項
+			//langCombo = "cmn-Hant-TW"; // 取得「辨識語言」這個選擇控制項
+			if (recognizing) { // 如果正在辨識，則停止。
+				recognition.stop();
+			} else { // 否則就開始辨識
+				recognition.lang = "cmn-Hant-TW"; // 設定辨識語言
+				recognition.start(); // 開始辨識
+			}
+		}
+		function recognStar() {
+
+				recognition.lang = "cmn-Hant-TW"; // 設定辨識語言
+				recognition.start(); // 開始辨識
+
+		}		
+		
+		
+		
+		//瀏覽器檢查
+		if (!('webkitSpeechRecognition' in window)) {  // 如果找不到 window.webkitSpeechRecognition 這個屬性
+		// 就是不支援語音辨識，要求使用者更新瀏覽器。 
+			tempBox.innerText ="本瀏覽器不支援語音辨識，請更換瀏覽器！(Chrome 25 版以上才支援語音辨識)";
+		} else {
+			var recognition = new webkitSpeechRecognition(); // 建立語音辨識物件 webkitSpeechRecognition
+			recognition.continuous = true; // 設定連續辨識模式
+			recognition.interimResults = true; // 設定輸出中先結果。
+
+			recognition.onstart = function() { // 開始辨識
+				recognizing = true; // 設定為辨識中
+			};
+
+			recognition.onend = function() { // 辨識完成
+				recognizing = false; // 設定為「非辨識中」
+			};
+
+			recognition.onresult = function(event) { // 辨識有任何結果時
+				var interim_transcript = ''; // 中間結果
+				final_transcript = '';
+				for (var i = event.resultIndex; i < event.results.length; ++i) { // 對於每一個辨識結果
+					if (event.results[i].isFinal) { // 如果是最終結果
+						final_transcript += event.results[i][0].transcript; // 將其加入最終結果中
+						
+					} else { // 否則
+						interim_transcript += event.results[i][0].transcript; // 將其加入中間結果中
+					}
+				}
+				//if (final_transcript.trim().length > 0) // 如果有最終辨識文字
+				//	$("#tempBox").text(final_transcript); // 顯示最終辨識文字
+				if (interim_transcript.trim().length > 0) // 如果有中間辨識文字
+					$("#tempBox").text(interim_transcript);// 顯示最終辨識文字
+				//textBox = interim_transcript;
+				
+				//textBOx = "大家好，OK麥克"
+						if (interim_transcript.indexOf("小麥同學") != -1) {
+							aispeak("我在 主人 需要我幫忙什麼");							
+						} else if (interim_transcript.indexOf("打開電燈") != -1) {
+							IoControl(1);
+							aispeak("好的 電燈已經打開");							
+						} else if (interim_transcript.indexOf("關掉電燈") != -1) {
+							IoControl(2);
+							aispeak("好的  電燈已經關掉");							
+						} else if (interim_transcript.indexOf("打開電風扇") != -1) {
+							IoControl(3);
+							aispeak("好的 電風扇已經打開");							
+						} else if (interim_transcript.indexOf("關掉電風扇") != -1) {
+							IoControl(4);
+							aispeak("好的  電風扇已經關掉");							
+						} else if (interim_transcript.indexOf("打開聚焦燈") != -1) {
+							IoControl(5);
+							aispeak("好的 聚焦燈已經打開");							
+						} else if (interim_transcript.indexOf("關掉聚焦燈") != -1) {
+							IoControl(6);
+							aispeak("好的  聚焦燈已經關掉");							
+						} 
+				
+				
+				
+				
+				
+				
+		
+				
+			};
+		}	
+
+		//設計者README說明
+		function readme() {
+			alert("AIOT 網頁介面控制面板，嘉義市北興國中楊心淵設計，有任何疑問請FB楊心淵或tnjboxing@gmail聯繫，Power edit by Younger Yang");
+		}
+
+
+//載入後執行函數
+    $(function(){
+        function getTemp() {		//json
+            var ip = $("#ipsetup").text();
+			var url = "http://" + ip + "/TEMP";
+			$.get(url, function(data){
+                $("#temp").html(data);
+				//$("#potA").text(data.A);
+				//$("#potB").text(data.B);
+		    });
+			setTimeout(function(){
+				console.log("I am the third log after 5 seconds");
+			},5000);
+			var url = "http://" + ip + "/PHTOA";
+			$.get(url, function(data){
+                $("#potA").html(data);
+			});	
+						setTimeout(function(){
+				console.log("I am the third log after 5 seconds");
+			},5000);
+			var url = "http://" + ip + "/PHTOB";
+			$.get(url, function(data){
+                $("#potB").html(data);
+			});	
+			
+        }
+        getTemp();  // 網頁載入完畢時，立即讀取並顯示溫度值。
+		//startButton();
+        window.setInterval(function(){
+            getTemp();
+			
+        }, 15000);
+    });
+
+
+	
+	</script>
+	</body>			
+</html>
