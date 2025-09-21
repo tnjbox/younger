@@ -2,25 +2,24 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>成績紀錄上傳</title>
+<title>按鈕計數器與數據加載</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="controls-container">
-  <select id="row-selector">		//班級下拉式選單，選單值要跟Script的選項匹配
-    <option value="1">902</option>
-    <option value="2">903</option>
-    <option value="3">904</option>
-    <option value="4">905</option>
-    <option value="5">906</option>
-    <option value="6">907</option>
+  <select id="row-selector">
+    <option value="1">709</option>
     <option value="7">社團</option>
     <option value="8">YDWS</option>
   </select>
+  <button id="load-data">載入數據</button>
+  <button id="toggle-update">即時: 關閉</button>
+  <button id="batch-upload">批次上傳</button>
   <button id="upload-grade">階段成績上傳</button>
   <input type="text" id="assignment-name" placeholder="作業名稱">
 </div>
 <div id="buttons-container"></div>
 <script src="script.js"></script>
 </body>
+
 </html>
