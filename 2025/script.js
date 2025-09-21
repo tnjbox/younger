@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	const button = document.createElement('button');
     
 	if ( i<30){
-		button.innerHTML = `<img src="images/0.png" alt=""><span>${i + 1} ${StName[i]} (${0})</span>`;
+		button.innerHTML = `<img src="images/0.png" alt=""><span>${i + 1} ${StName[i]}<br> (${0})</span>`;
 	} else if (i<40)  {
 		button.innerHTML = `<br><br>`;
 	} else {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
       value = (value + 1) % 6;
       button.dataset.value = value;
 	  if (i<30) {
-		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i + 1}  ${StName[i]} (${value})</span>`;
+		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i + 1}  ${StName[i]}<br> (${value})</span>`;
       if (isUpdateEnabled) {
         const selectedRow = rowSelector.value;
         const column = i + 1; // 按鈕編號對應的欄(column)
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }		
 		
 	  }	else {
-		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i - 39}  ${StName[i]} (${value})</span>`;
+		button.innerHTML = `<img src="images/${value}.png" alt=""><span>${i - 39}  ${StName[i]}<br> (${value})</span>`;
 	  }
       // 如果即時更新狀態為開啟，則將變數值寫入試算表
 	  
@@ -178,3 +178,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
   
 });
+
