@@ -1,4 +1,4 @@
-題目：臨時屋
+題目：YoungerDreamWorks 初階練習
 <table><tr><th><center>問題描述</th></tr><tr><td style=text-align: justify;>為了在災害發生時，可以將災民快速送往收容所，防災中心定期舉行防災演習，將災民以運輸車送往收容所。</td></tr><tr><th>題目說明</th></tr><tr><td style=text-align: justify;>收容所有多個臨時屋（至少1間，最多12間），每個臨時屋可容納人數不盡相同，當第一個臨時屋滿了以後，就開放第二個臨時屋，滿了之後再開放第三個臨時屋，依此類推。請幫防災中心統計防災演習期間共開放了幾個臨時屋。</td></tr><tr><th>範例格式</th></tr></tr></table><table border=1><tr><td width=30%>使用者輸入</td><td width=30%>輸出</td><td width=40%>範例說明</td></tr><tr><td>50
 <br>4
 <br>30 20 15 55</td><td>2</td><td>此次演習運輸車總共運輸了 50人。<br />
@@ -93,3 +93,4 @@
 第四個輸入：
 預期答案：15 
 分數：22
+
