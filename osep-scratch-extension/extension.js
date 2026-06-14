@@ -1,30 +1,59 @@
-class OSEPTestExtension
+import { STATE } from "./runtime-state.js";
+
+class OSEP
 {
     getInfo()
     {
         return {
-            id: "oseptest",
+            id: "osep_v22b",
 
-            name: "OSEP Test",
+            name: "OSEP V2.2-B",
 
-            blocks: [
+            blocks:
+            [
                 {
-                    opcode: "hello",
+                    opcode: "btn",
+                    blockType: Scratch.BlockType.BOOLEAN,
+                    text: "button [ID] pressed",
+                    arguments:
+                    {
+                        ID:
+                        {
+                            type: Scratch.ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    }
+                },
 
-                    blockType: Scratch.BlockType.REPORTER,
+                {
+                    opcode: "func",
+                    blockType: Scratch.BlockType.BOOLEAN,
+                    text: "function key pressed"
+                },
 
-                    text: "hello"
+                {
+                    opcode: "connected",
+                    blockType: Scratch.BlockType.BOOLEAN,
+                    text: "ESP connected"
                 }
             ]
         };
     }
 
-    hello()
+    btn(args)
     {
-        return "OSEP OK";
+        return STATE.btn[args.ID] === 1;
+    }
+
+    func()
+    {
+        return STATE.func === 1;
+    }
+
+    connected()
+    {
+        return STATE.connected;
     }
 }
 
-Scratch.extensions.register(
-    new OSEPTestExtension()
-);
+Scratch.extensions.register(new OSEP());
