@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>OSEP WebSerial Core V1.3</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="app">
+
+  <h2>OSEP WebSerial Platform</h2>
+
+  <div id="statusBar">
+    <span id="statusDot"></span>
+    <span id="statusText">Disconnected</span>
+  </div>
+
+  <button id="connectBtn">Connect ESP8266</button>
+
+  <hr>
+
+  <section>
+    <h3>LED Control</h3>
+
+    <button onclick="OSEP.send('RED')">RED</button>
+    <button onclick="OSEP.send('GREEN')">GREEN</button>
+    <button onclick="OSEP.send('BLUE')">BLUE</button>
+    <button onclick="OSEP.send('OFF')">OFF</button>
+  </section>
+
+  <hr>
+
+  <section>
+    <h3>Button State</h3>
+
+    <div id="pad"></div>
+  </section>
+
+  <hr>
+
+  <section>
+    <h3>Debug JSON</h3>
+    <pre id="debug"></pre>
+  </section>
+
+</div>
+
+//<script src="app.js"></script>
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
