@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>OSEP Runtime Test</title>
+</head>
+
+<body>
+
+<h2>OSEP Runtime Test</h2>
+
+<button id="connectBtn">
+Connect
+</button>
+
+<hr>
+
+<pre id="status">
+Waiting...
+</pre>
+
+<script type="module">
+
+import {OSEPBridge}
+from "./osep-bridge.js";
+
+import {updateState}
+from "./osep-protocol.js";
+
+import {STATE}
+from "./runtime-state.js";
+
+const bridge = new OSEPBridge();
+
+document
+.getElementById("connectBtn")
+.onclick = async () =>
+{
+    await bridge.connect(data =>
+    {
+        updateState(data);
+    });
+};
+
+setInterval(() =>
+{
+    document
+    .getElementById("status")
+    .textContent =
+    JSON.stringify(
+        STATE,
+        null,
+        2
+    );
+
+},100);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+OSEP-WebSerial-Core
+│
+├── index.html
+├── app.js
+├── style.css
+│
+├── core/
+│   ├── serial.js        ← WebSerial封裝
+│   ├── protocol.js      ← JSON協定
+│   ├── osep-ui.js       ← ⭐共用UI模組（重點）
+│   ├── osep-state.js    ← 狀態管理
+│   └── osep-api.js      ← 未來 Scratch Extension 接口
+
+
+
+osep-scratch-extension/
+│
+├── test.html
+├── extension.js        ← Scratch Extension 主程式
+├── osep-bridge.js      ← WebSerial橋接層
+├── osep-protocol.js    ← JSON解析
+├── runtime-state.js    ← 狀態管理
+│
+└── blocks/
+    ├── buttons.js
+    ├── leds.js
+    └── events.js
