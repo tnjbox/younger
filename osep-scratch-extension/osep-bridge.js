@@ -7,6 +7,7 @@ export class OSEPBridge
         this.port = null;
         this.reader = null;
         this.buffer = "";
+        this.active = false;
     }
 
     async connect(callback)
@@ -16,38 +17,62 @@ export class OSEPBridge
         await this.port.open({
             baudRate:115200
         });
-		
-		STATE.connected = true;
+
+        STATE.connected = true;
+        this.active = true;
 
         this.reader = this.port.readable.getReader();
 
-        while(true)
+        try
         {
-            const {value,done} = await this.reader.read();
-
-            if(done) {
-				
-				STATE.connected = false;
-				break;
-			}
-
-            this.buffer += new TextDecoder().decode(value);
-
-            let lines = this.buffer.split("\n");
-
-            this.buffer = lines.pop();
-
-            for(let line of lines)
+            while(this.active)
             {
-                try
+                const { value, done } = await this.reader.read();
+
+                if(done)
                 {
-                    callback(JSON.parse(line));
+                    break;
                 }
-                catch(e)
+
+                this.buffer += new TextDecoder().decode(value);
+
+                let lines = this.buffer.split("\n");
+                this.buffer = lines.pop();
+
+                for(let line of lines)
                 {
-                    console.log("JSON Error",line);
+                    try
+                    {
+                        callback(JSON.parse(line));
+                    }
+                    catch(e)
+                    {
+                        console.log("JSON Error", line);
+                    }
                 }
             }
+        }
+        catch(err)
+        {
+            console.log("Serial disconnected:", err);
+        }
+        finally
+        {
+            STATE.connected = false;
+
+            this.active = false;
+
+            try
+            {
+                this.reader.releaseLock();
+            }
+            catch(e){}
+
+            try
+            {
+                await this.port.close();
+            }
+            catch(e){}
         }
     }
 }
