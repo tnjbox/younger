@@ -1,3 +1,5 @@
+import { STATE } from "./runtime-state.js";
+
 export class OSEPBridge
 {
     constructor()
@@ -14,6 +16,8 @@ export class OSEPBridge
         await this.port.open({
             baudRate:115200
         });
+		
+		STATE.connected = true;
 
         this.reader = this.port.readable.getReader();
 
@@ -21,7 +25,11 @@ export class OSEPBridge
         {
             const {value,done} = await this.reader.read();
 
-            if(done) break;
+            if(done) {
+				
+				STATE.connected = false;
+				break;
+			}
 
             this.buffer += new TextDecoder().decode(value);
 
