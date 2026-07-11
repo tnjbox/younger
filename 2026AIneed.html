@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>科技領域教師 AI 增能需求調查問卷</title>
+  <title>科技領域教師 AI 增能需求調查問卷｜V8.1</title>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -207,14 +207,14 @@
   <header>
     <div class="wrap">
       <h1>科技領域教師 AI 增能需求調查問卷</h1>
-      <p>本問卷希望了解科技教師在面對 AI 應用於教學時的實際困難、焦慮與增能需求，做為<b>科技攜手</b>後續規劃科技領域教師 AI 增能課程的重要依據。</p>
+      <p>本問卷希望了解生活科技、資訊科技教師在面對 AI 應用於教學時的實際困難、焦慮與增能需求，作為<b>科技攜手</b>後續規劃科技領域教師 AI 增能課程的重要依據。</p>
     </div>
   </header>
 
   <main>
     <div class="notice">
       <p>本問卷並非評量教師 AI 能力，也不是調查是否已經熟練使用 AI，而是希望蒐集現場真實聲音，包含不熟悉、不確定、擔心、期待與需要被協助的地方。</p>
-      <p class="hint">填答時間約 5 分鐘。資料僅供為<b>科技攜手</b>後續分析與課程規劃使用。</p>
+      <p class="hint">填答時間約 5 分鐘。資料僅供<b>科技攜手</b>整體分析與課程規劃使用。</p>
     </div>
 
     <form id="surveyForm" method="post" action="javascript:void(0)" novalidate>
@@ -225,7 +225,9 @@
         <div class="actions">
           <button type="submit" id="submitBtn">送出問卷</button>
           <span id="status" class="status"></span>
-
+        </div>
+        <p class="small">送出後資料會寫入您設定的 Google Sheets。若送出後沒有反應，請確認 Apps Script Web App URL 是否已正確貼入本 HTML 檔。</p>
+      </div>
     </form>
 
 
@@ -543,8 +545,8 @@
         // 若無法自動關閉，就保留完成訊息讓填答者手動關閉。
         setTimeout(() => {
           submitResult.innerHTML = '已送出。感謝您的填答！<br>若視窗未自動關閉，您可以直接關閉此頁面。';
-        }, 2000);
-      }, 3000);
+        }, 500);
+      }, 2500);
     }
 
     function postToAppsScript(payload) {
@@ -630,6 +632,10 @@
         return;
       }
 
+      // 先保留 payload，再關閉確認視窗。
+      // 注意：closeConfirmModal() 會清空 pendingPayload，所以不能直接在關閉後使用 pendingPayload。
+      const payloadToSubmit = pendingPayload;
+
       confirmSubmitBtn.disabled = true;
       editBtn.disabled = true;
       submitBtn.disabled = true;
@@ -638,7 +644,7 @@
       closeConfirmModal();
 
       try {
-        postToAppsScript(pendingPayload);
+        postToAppsScript(payloadToSubmit);
       } catch (err) {
         statusEl.textContent = '送出失敗：' + (err && err.message ? err.message : err);
         statusEl.classList.add('err');
@@ -648,7 +654,12 @@
 
       statusEl.textContent = '已送出。感謝您的填答！';
       statusEl.classList.add('ok');
-      showSubmittedAndTryClose();
+
+      // Apps Script 是透過隱藏 iframe POST，前端無法直接讀取跨網域回應。
+      // 因此延後顯示完成與嘗試關閉，避免尚未寫入 Google Sheet 就關閉頁面。
+      setTimeout(() => {
+        showSubmittedAndTryClose();
+      }, 2200);
     });
 
     confirmModal.addEventListener('click', e => {
