@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>科技領域教師 AI 增能需求調查問卷</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --danger: #dc2626;
+      --soft: #eff6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #1d4ed8, #0f766e);
+      color: #fff;
+      padding: 40px 18px;
+    }
+    header .wrap, main { max-width: 920px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; font-size: clamp(1.8rem, 3vw, 2.4rem); }
+    header p { margin: 0; max-width: 820px; opacity: .95; }
+    main { padding: 22px 14px 52px; }
+    .notice, .section, .submit-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+      margin: 16px 0;
+      padding: 22px;
+    }
+    .notice { border-left: 6px solid var(--primary); }
+    .section-title {
+      margin: 0 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 1.25rem;
+    }
+    .hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+    .question {
+      padding: 18px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+    .question:last-child { border-bottom: 0; }
+    .q-title { font-weight: 700; margin-bottom: 8px; }
+    .q-meta { color: var(--muted); font-size: .92rem; margin-bottom: 8px; }
+    .required { color: var(--danger); font-weight: 700; }
+    label.option {
+      display: block;
+      padding: 8px 10px;
+      margin: 4px 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    label.option:hover { background: var(--soft); }
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    .other-input { margin: 8px 0 0 26px; max-width: 560px; display: none; }
+    .field-error { color: var(--danger); font-size: .92rem; margin-top: 8px; display: none; }
+    .section.skip-hidden { display: none; }
+    .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    button {
+      appearance: none;
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 22px;
+      font-size: 1rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { background: var(--primary-dark); }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .status { font-weight: 700; }
+    .status.ok { color: #15803d; }
+    .status.err { color: var(--danger); }
+    .small { font-size: .9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>科技領域教師 AI 增能需求調查問卷</h1>
+      <p>本問卷希望了解生活科技、資訊科技教師在面對 AI 應用於教學時的實際困難、焦慮與增能需求，作為科技攜手後續規劃科技領域教師 AI 增能課程的重要依據。</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="notice">
+      <p>本問卷並非評量教師 AI 能力，也不是調查是否已經熟練使用 AI，而是希望蒐集現場真實聲音，包含不熟悉、不確定、擔心、期待與需要被協助的地方。</p>
+      <p class="hint">填答時間約 5 分鐘。資料僅供整體分析與課程規劃使用。</p>
+    </div>
+
+    <form id="surveyForm" method="post" action="javascript:void(0)" novalidate>
+      <input type="text" id="website" name="website" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0" aria-hidden="true" />
+      <div id="sections"></div>
+
+      <div class="submit-card">
+        <div class="actions">
+          <button type="submit" id="submitBtn">送出問卷</button>
+          <span id="status" class="status"></span>
+        </div>
+        <p class="small">送出後資料會寫入您設定的 Google Sheets。若送出後沒有反應，請確認 Apps Script Web App URL 是否已正確貼入本 HTML 檔。</p>
+      </div>
+    </form>
+
+    <iframe name="submitFrame" id="submitFrame" style="display:none"></iframe>
+  </main>
+
+  <script>
+    // === 請先部署 Apps Script Web App，然後把網址貼在這裡 ===
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzkqOAKhD3L_tXpwR8TXk5gjqrWYNEs2K4jOOJuqn5sMYqDPhV2o2YY_H_86pIE2HQ/exec';
+
+    const cityOptions = [
+      '基隆市', '臺北市', '新北市', '桃園市', '新竹市', '新竹縣', '苗栗縣', '臺中市',
+      '彰化縣', '南投縣', '雲林縣', '嘉義市', '嘉義縣', '臺南市', '高雄市', '屏東縣',
+      '宜蘭縣', '花蓮縣', '臺東縣', '澎湖縣', '金門縣', '連江縣', '其他'
+    ];
+
+    const sections = [
+      {
+        id: 'basic', title: '第一部分：基本資料與 AI 使用經驗', questions: [
+          { id: 'q01', no: 1, type: 'select', required: true, title: '您的任教縣市或所在縣市為何？', options: cityOptions },
+          { id: 'q02', no: 2, type: 'radio', required: true, title: '您目前主要任教的科技領域課程為何？', options: ['國小科技跨域', '生活科技', '資訊科技', '生活科技與資訊科技皆有任教', '其他'] },
+          { id: 'q03', no: 3, type: 'checkbox', required: true, title: '您目前任教階段為何？', options: ['國小', '國中', '高中', '高職', '其他'] },
+          { id: 'q04', no: 4, type: 'radio', required: true, title: '您的科技領域教學年資約為？', options: ['1～3 年', '3～10 年', '11～20 年', '20 年以上'] },
+          { id: 'q05', no: 5, type: 'radio', required: true, title: '您目前使用 AI 工具的經驗為何？', options: ['幾乎沒有使用過', '偶爾嘗試，但不熟悉', '比較常用於備課或行政工作', '比較常用於教學設計或課堂活動', '比較常用在引導學生在學習任務中使用 AI'] },
+          { id: 'q06', no: 6, type: 'checkbox', title: '您曾經使用過哪些 AI 工具？', options: ['ChatGPT', 'Gemini', 'Microsoft Copilot', 'Claude', 'Perplexity', 'Canva AI', 'NotebookLM', 'Padlet AI', 'Gamma', '教育平台內建 AI 功能', '尚未使用過', '其他'] }
+        ]
+      },
+      {
+        id: 'anxiety', title: '第二部分：面對 AI 的焦慮與阻力', questions: [
+          { id: 'q07', no: 7, type: 'checkbox', required: true, max: 5, title: '面對 AI 應用於教學，您最擔心的問題有哪些？', options: ['不熟悉 AI 工具操作', '不知道如何下指令或設計提示語', '擔心 AI 回答不正確', '不知道如何判斷 AI 產出的品質', '擔心學生直接用 AI 代寫作業', '擔心學生過度依賴 AI，不再自己思考', '不知道如何導入AI重新設計作業與評量', '不清楚學生使用 AI 時應該如何規範', '工具變化太快，覺得跟不上', '沒有足夠時間學習 AI', '缺少可以參考的科技領域AI導入教學案例', '擔心自己比學生不懂 AI', '不確定 AI 是否真的能幫助科技領域教學', '其他'] }
+        ]
+      },
+      {
+        id: 'support', title: '第三部分：科技領域教學工作中的支援需求', questions: [
+          { id: 'q08', no: 8, type: 'checkbox', required: true, max: 4, title: '備課、教材與課堂活動設計方面，您最希望 AI 協助哪些工作？', options: ['設計教案', '設計學習單', '設計課堂活動', '設計分組討論問題', '產生生活化或科技跨域教材案例', '命題與題目改寫', '其他'] },
+          { id: 'q09', no: 9, type: 'checkbox', required: true, max: 4, title: '實作任務、專題與差異化學習方面，您最希望 AI 協助哪些工作？', options: ['設計實作任務', '設計專題題目', '設計科技跨域任務', '設計差異化教材', '設計補救教學素材', '設計進階挑戰任務', '其他'] },
+          { id: 'q10', no: 10, type: 'checkbox', required: true, max: 4, title: '評量、回饋與學生 AI 使用方面，您最希望 AI 協助哪些工作？', options: ['建立評量規準', '設計可避免 AI 代寫的作業', '設計重視歷程與說明的任務', '批改作業或提供回饋建議', '協助學生學習反思', '規劃學生 AI 使用規範', '其他'] },
+          { id: 'q11', no: 11, type: 'checkbox', max: 3, title: '成果紀錄與教師工作支援方面，您最希望 AI 協助哪些工作？', options: ['整理學生作品或學習成果', '撰寫教學成果、計畫或行政文件', '整理研習或共備紀錄', '產出課程成果展示資料', '其他'] }
+        ]
+      },
+      {
+        id: 'lifeTech', title: '第四部分：生活科技教學需求', hint: '若您沒有任教生活科技，可略過本部分。', questions: [
+          { id: 'q12', no: 12, type: 'checkbox', max: 5, title: '在生活科技教學中，您最希望 AI 協助哪些工作？', options: ['設計實作任務', '設計專題製作題目', '協助學生創意發想', '協助學生進行問題分析', '協助拆解製作流程', '協助設計材料與工具使用說明', '協助撰寫安全注意事項', '協助產生設計圖、流程圖或結構說明', '協助學生改善作品', '協助撰寫作品說明', '協助設計作品評量規準', '協助整理學生作品成果', '其他'] },
+          { id: 'q13', no: 13, type: 'checkbox', title: '生活科技課堂中，您認為學生最常遇到的困難是什麼？', options: ['不擅長發想作品', '不容易定義問題', '不熟悉分析需求', '不擅長繪製設計圖或流程圖', '不擅長規劃材料與工具', '不擅長安排製作步驟', '遇到失敗不容易修正', '不擅長說明自己的設計理由', '不擅長整理作品歷程', '小組合作困難', '其他'] }
+        ]
+      },
+      {
+        id: 'future', title: '第五部分：AI 增能形式與後續參與需求', questions: [
+          { id: 'q14', no: 14, type: 'radio', required: true, title: '後續如果辦理線上增能研習，你是否願意參加？', options: ['願意', '視時間', '沒有意願', '其他'] },
+          { id: 'q15', no: 15, type: 'radio', required: true, title: '後續如果規劃辦理實體增能研習，你是否願意參加？', options: ['願意', '視時間、區域決定', '沒有意願', '其他'] }
+        ]
+      }
+    ];
+
+    const form = document.getElementById('surveyForm');
+    const container = document.getElementById('sections');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function esc(str) {
+      return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function renderOption(q, opt, index) {
+      const value = esc(opt);
+      const id = `${q.id}_${index}`;
+      const hasOther = opt === '其他';
+      const type = q.type === 'radio' ? 'radio' : 'checkbox';
+      return `
+        <label class="option" for="${id}">
+          <input type="${type}" id="${id}" name="${q.id}" value="${value}" data-qid="${q.id}" ${hasOther ? 'data-other="true"' : ''} /> ${value}
+        </label>
+        ${hasOther ? `<input class="other-input" type="text" id="${q.id}_other_text" placeholder="請補充說明" />` : ''}
+      `;
+    }
+
+    function renderSelect(q) {
+      const hasOther = q.options.includes('其他');
+      return `
+        <select name="${q.id}" id="${q.id}" data-select-qid="${q.id}">
+          <option value="">請選擇</option>
+          ${q.options.map(opt => `<option value="${esc(opt)}">${esc(opt)}</option>`).join('')}
+        </select>
+        ${hasOther ? `<input class="other-input" type="text" id="${q.id}_other_text" placeholder="請補充說明" />` : ''}
+      `;
+    }
+
+    function renderQuestion(q) {
+      const required = q.required ? '<span class="required">＊</span>' : '';
+      const maxText = q.max ? `最多選 ${q.max} 項` : '';
+      let body = '';
+      if (q.type === 'radio' || q.type === 'checkbox') {
+        body = q.options.map((opt, i) => renderOption(q, opt, i)).join('');
+      } else if (q.type === 'select') {
+        body = renderSelect(q);
+      } else if (q.type === 'text') {
+        body = `<input type="text" name="${q.id}" id="${q.id}" placeholder="${esc(q.placeholder || '')}" />`;
+      } else if (q.type === 'textarea') {
+        body = `<textarea name="${q.id}" id="${q.id}"></textarea>`;
+      }
+      return `
+        <div class="question" id="block_${q.id}" data-qtype="${q.type}" data-required="${q.required ? 'true' : 'false'}" data-max="${q.max || ''}">
+          <div class="q-title">${q.no}. ${esc(q.title)} ${required}</div>
+          <div class="q-meta">題型：${q.type === 'radio' ? '單選' : q.type === 'checkbox' ? '複選' : q.type === 'select' ? '下拉式選單' : q.type === 'text' ? '簡答' : '段落'} ${maxText}</div>
+          ${body}
+          <div class="field-error" id="err_${q.id}"></div>
+        </div>
+      `;
+    }
+
+    function renderSections() {
+      container.innerHTML = sections.map(sec => `
+        <section class="section" id="section_${sec.id}">
+          <h2 class="section-title">${esc(sec.title)}</h2>
+          ${sec.hint ? `<p class="hint">${esc(sec.hint)}</p>` : ''}
+          ${sec.questions.map(renderQuestion).join('')}
+        </section>
+      `).join('');
+    }
+
+    function toggleOtherInputs() {
+      document.querySelectorAll('input[data-other="true"]').forEach(input => {
+        const box = document.getElementById(`${input.name}_other_text`);
+        if (!box) return;
+        box.style.display = input.checked ? 'block' : 'none';
+        if (!input.checked) box.value = '';
+      });
+      document.querySelectorAll('select[data-select-qid]').forEach(select => {
+        const box = document.getElementById(`${select.name}_other_text`);
+        if (!box) return;
+        box.style.display = select.value === '其他' ? 'block' : 'none';
+        if (select.value !== '其他') box.value = '';
+      });
+    }
+
+    function updateBranching() {
+      const selected = document.querySelector('input[name="q02"]:checked')?.value || '';
+      const life = document.getElementById('section_lifeTech');
+      const info = document.getElementById('section_infoTech');
+      const showLife = selected === '生活科技' || selected === '生活科技與資訊科技皆有任教' || selected === '國小科技跨域';
+      const showInfo = selected === '資訊科技' || selected === '生活科技與資訊科技皆有任教' || selected === '國小科技跨域';
+      life.classList.toggle('skip-hidden', !showLife);
+      info.classList.toggle('skip-hidden', !showInfo);
+    }
+
+    function setError(qid, message) {
+      const err = document.getElementById(`err_${qid}`);
+      if (!err) return;
+      err.textContent = message || '';
+      err.style.display = message ? 'block' : 'none';
+    }
+
+    function validateForm() {
+      let ok = true;
+      document.querySelectorAll('.field-error').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
+
+      sections.forEach(sec => {
+        const secEl = document.getElementById(`section_${sec.id}`);
+        if (secEl.classList.contains('skip-hidden')) return;
+        sec.questions.forEach(q => {
+          if (q.type === 'text' || q.type === 'textarea' || q.type === 'select') {
+            const value = document.getElementById(q.id)?.value.trim() || '';
+            if (q.required && !value) { setError(q.id, '此題為必填。'); ok = false; }
+          }
+          if (q.type === 'radio') {
+            const selected = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)];
+            if (q.required && selected.length === 0) { setError(q.id, '此題為必填。'); ok = false; }
+          }
+          if (q.type === 'checkbox') {
+            const selected = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)];
+            if (q.required && selected.length === 0) { setError(q.id, '此題為必填。'); ok = false; }
+            if (q.max && selected.length > q.max) { setError(q.id, `此題最多只能選 ${q.max} 項，目前已選 ${selected.length} 項。`); ok = false; }
+          }
+        });
+      });
+
+      return ok;
+    }
+
+    function getAnswer(q) {
+      if (q.type === 'text' || q.type === 'textarea') {
+        return document.getElementById(q.id)?.value.trim() || '';
+      }
+      if (q.type === 'select') {
+        const select = document.getElementById(q.id);
+        if (!select) return '';
+        if (select.value === '其他') {
+          const other = document.getElementById(`${q.id}_other_text`)?.value.trim();
+          return other ? `其他：${other}` : '其他';
+        }
+        return select.value;
+      }
+      if (q.type === 'radio') {
+        const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+        if (!selected) return '';
+        if (selected.value === '其他') {
+          const other = document.getElementById(`${q.id}_other_text`)?.value.trim();
+          return other ? `其他：${other}` : '其他';
+        }
+        return selected.value;
+      }
+      if (q.type === 'checkbox') {
+        return [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map(input => {
+          if (input.value === '其他') {
+            const other = document.getElementById(`${q.id}_other_text`)?.value.trim();
+            return other ? `其他：${other}` : '其他';
+          }
+          return input.value;
+        });
+      }
+      return '';
+    }
+
+    function collectPayload() {
+      const answers = {};
+      sections.forEach(sec => {
+        const secEl = document.getElementById(`section_${sec.id}`);
+        const skipped = secEl.classList.contains('skip-hidden');
+        sec.questions.forEach(q => {
+          answers[q.id] = skipped ? '' : getAnswer(q);
+        });
+      });
+      return {
+        formTitle: '科技領域教師 AI 增能需求調查問卷',
+        submittedAtClient: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        honeypot: document.getElementById('website').value,
+        answers
+      };
+    }
+
+    function postToAppsScript(payload) {
+      if (!/^https:\/\/script\.google\.com\/macros\/s\//.test(WEB_APP_URL)) {
+        throw new Error('WEB_APP_URL 格式不正確，應為 https://script.google.com/macros/s/.../exec');
+      }
+
+      let frame = document.getElementById('submitFrame');
+      if (!frame) {
+        frame = document.createElement('iframe');
+        frame.id = 'submitFrame';
+        frame.name = 'submitFrame';
+        frame.style.display = 'none';
+        document.body.appendChild(frame);
+      }
+
+      const hiddenForm = document.createElement('form');
+      hiddenForm.method = 'POST';
+      hiddenForm.action = WEB_APP_URL;
+      hiddenForm.target = 'submitFrame';
+      hiddenForm.style.display = 'none';
+      hiddenForm.acceptCharset = 'UTF-8';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify(payload);
+      hiddenForm.appendChild(input);
+      document.body.appendChild(hiddenForm);
+      hiddenForm.submit();
+      setTimeout(() => hiddenForm.remove(), 1000);
+    }
+
+    renderSections();
+    updateBranching();
+
+    document.addEventListener('change', e => {
+      if (e.target.matches('input') || e.target.matches('select')) toggleOtherInputs();
+      if (e.target.name === 'q02') updateBranching();
+    });
+
+    function handleSubmit(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+
+      if (!WEB_APP_URL || WEB_APP_URL.includes('PASTE_YOUR')) {
+        statusEl.textContent = '尚未設定 Apps Script Web App URL。請先把 HTML 檔內的 WEB_APP_URL 改成 Apps Script Web App URL。';
+        statusEl.classList.add('err');
+        return false;
+      }
+
+      if (location.protocol === 'file:') {
+        console.warn('目前使用 file:// 本機檔案測試。建議上傳到 GitHub Pages 後，以 https:// 網址測試送出。');
+      }
+
+      if (!validateForm()) {
+        statusEl.textContent = '請確認必填題與最多可選數量。';
+        statusEl.classList.add('err');
+        const firstErr = document.querySelector('.field-error[style*="block"]');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return false;
+      }
+
+      submitBtn.disabled = true;
+      statusEl.textContent = '資料送出中……';
+      const payload = collectPayload();
+
+      try {
+        postToAppsScript(payload);
+      } catch (err) {
+        statusEl.textContent = '送出失敗：' + (err && err.message ? err.message : err);
+        statusEl.classList.add('err');
+        submitBtn.disabled = false;
+        return false;
+      }
+
+      setTimeout(() => {
+        statusEl.textContent = '已送出。感謝您的填答！';
+        statusEl.classList.add('ok');
+        form.reset();
+        toggleOtherInputs();
+        updateBranching();
+        submitBtn.disabled = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 900);
+
+      return false;
+    }
+
+    form.addEventListener('submit', handleSubmit);
+    form.onsubmit = handleSubmit;
+  </script>
+</body>
+</html>
