@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>調參數找最小誤差：機器怎麼「學」</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --best:#898781;
+  --btn:#256abf; --btnink:#fff; --good:#006300; --bad:#b32d2d;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --best:#c3c2b7;
+    --btn:#256abf; --btnink:#fff; --good:#0ca30c; --bad:#e66767;
+  }
+}
+*{box-sizing:border-box}
+html{font-size:16px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:1.35rem;margin:0 0 4px}
+.lead{color:var(--ink2);margin:0 0 12px;font-size:.95rem}
+.steps{display:flex;flex-wrap:wrap;gap:6px 8px;margin:0 0 14px;padding:0;list-style:none;font-size:.95rem}
+.steps li{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px 14px}
+.steps li b{margin-right:4px}
+.grid{display:grid;gap:14px;grid-template-columns:1fr;grid-template-areas:"scatter" "ctrl" "curve"}
+@media (min-width:920px){.grid{grid-template-columns:minmax(0,7fr) minmax(300px,5fr);grid-template-areas:"scatter ctrl" "curve ctrl";align-items:start}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.card h2{font-size:1rem;margin:0 0 8px;color:var(--ink2);font-weight:600}
+#cScatter{grid-area:scatter}#cCtrl{grid-area:ctrl}#cCurve{grid-area:curve}
+svg{display:block;width:100%;height:auto;touch-action:none}
+svg text{font-family:inherit;fill:var(--ink2);font-size:12px}
+.gridl{stroke:var(--grid);stroke-width:1}
+.axisl{stroke:var(--axis);stroke-width:1}
+.dot{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.pline{stroke:var(--s2);stroke-width:3;stroke-linecap:round}
+.bline{stroke:var(--best);stroke-width:2;stroke-linecap:round;stroke-dasharray:1 5}
+.eseg{stroke:var(--s3);stroke-width:3;stroke-linecap:round}
+.cline{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.cdot{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.tline{stroke:var(--ink2);stroke-width:1}
+svg text.lab{fill:var(--ink);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.85rem;color:var(--ink2);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw-dot{width:10px;height:10px;border-radius:50%;background:var(--s1)}
+.sw-line{width:18px;height:3px;border-radius:2px;background:var(--s2)}
+.sw-err{width:18px;height:3px;border-radius:2px;background:var(--s3)}
+.sw-best{width:18px;height:0;border-top:2px dotted var(--best)}
+.hero{font-size:3.4rem;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.hero small{font-size:1.1rem;font-weight:500;color:var(--ink2);margin-left:6px}
+.rd{color:var(--ink2);font-size:.9rem}
+.meter{height:8px;border-radius:999px;background:var(--grid);margin:8px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--s1);border-radius:999px;transition:width .2s}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+.banner{margin-top:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--axis);font-size:.95rem}
+.banner.ok{border-color:var(--good);color:var(--ink)}
+.banner.ok b{color:var(--good)}
+.eq{background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:8px 12px;margin:12px 0;font-size:.95rem}
+.eq b{font-size:1.05rem}
+.ctl{margin:14px 0}
+.ctl label{display:block;font-weight:600;margin-bottom:2px}
+.ctl .hintt{font-size:.85rem;color:var(--ink2);margin-bottom:4px}
+.srow{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center}
+.srow output{min-width:4.2ch;text-align:right;font-weight:700;font-size:1.1rem}
+input[type=range]{width:100%;height:32px;accent-color:var(--btn)}
+button,select{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:1px solid var(--axis);background:var(--surface);border-radius:8px;padding:6px 12px;min-height:40px}
+button:hover:not(:disabled){background:var(--grid)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--btn);color:var(--btnink);border-color:var(--btn)}
+button.primary:hover:not(:disabled){background:#1c5cab}
+button.nudge{min-width:40px;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+select{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:6px 10px;min-height:40px}
+.rowflex{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sec{border-top:1px solid var(--grid);margin-top:14px;padding-top:12px}
+.sec h3{margin:0 0 6px;font-size:.95rem}
+.count{font-size:.85rem;color:var(--ink2)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border-top:1px solid var(--grid);padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--ink2);font-weight:600}
+summary{cursor:pointer;color:var(--ink2)}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:6px;font-size:.85rem;z-index:10;display:none;max-width:260px}
+footer{font-size:.8rem;color:var(--muted);margin:20px 0}
+footer a{color:var(--ink2)}
+.sr{position:absolute;left:-9999px}
+@media (max-width:600px){#scatter text{font-size:18px}#curve text{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>調參數找最小誤差：機器怎麼「學」</h1>
+<p class="lead">任務：用「身高」預測「鞋長」（虛構資料）。你要調整兩個旋鈕，讓預測線盡量貼近每一位同學的真實鞋長。</p>
+<ul class="steps" aria-label="訓練四步">
+  <li><b>① 猜</b>用現在的旋鈕畫預測線</li>
+  <li><b>② 比</b>和真實資料比，量出誤差</li>
+  <li><b>③ 改</b>調整旋鈕，讓誤差變小</li>
+  <li><b>④ 重複</b>直到誤差夠小 = 訓練完成</li>
+</ul>
+
+<div class="grid">
+<section class="card" id="cScatter">
+  <h2>身高 → 鞋長：預測線與真實資料</h2>
+  <svg id="scatter" viewBox="0 0 640 400" role="img" aria-label="散布圖：9 位同學的身高與鞋長，以及目前的預測線"></svg>
+  <div class="legend">
+    <span><i class="sw-dot"></i>真實資料（9 位同學）</span>
+    <span><i class="sw-line"></i>你的預測線</span>
+    <span><i class="sw-err"></i>誤差（預測與真實的差距）</span>
+    <span id="legBest" hidden><i class="sw-best"></i>最佳答案</span>
+  </div>
+  <details style="margin-top:10px">
+    <summary>資料表（每位同學的預測與誤差）</summary>
+    <table id="tbl"></table>
+  </details>
+</section>
+
+<section class="card" id="cCtrl">
+  <h2>控制台</h2>
+  <div class="rd">目前誤差（預測平均差幾公分）</div>
+  <div class="hero" id="hero">0.00<small>公分</small></div>
+  <div class="meter" aria-hidden="true"><i id="meter" style="width:0"></i></div>
+  <div class="rd" id="goalTxt"></div>
+  <div class="banner" id="banner"></div>
+
+  <div class="eq" id="eq"></div>
+
+  <div class="ctl">
+    <label for="sw">旋鈕 1：斜率 w</label>
+    <div class="hintt">身高每多 10 公分，鞋長多幾公分？</div>
+    <div class="srow">
+      <button class="nudge" data-n="w:-1" aria-label="w 減少 0.05">−</button>
+      <input type="range" id="sw" min="-0.5" max="3" step="0.05">
+      <button class="nudge" data-n="w:1" aria-label="w 增加 0.05">＋</button>
+      <output for="sw" id="ow"></output>
+    </div>
+  </div>
+  <div class="ctl">
+    <label for="sb">旋鈕 2：基準 b</label>
+    <div class="hintt">身高剛好 165 公分的人，鞋長大約幾公分？</div>
+    <div class="srow">
+      <button class="nudge" data-n="b:-1" aria-label="b 減少 0.05">−</button>
+      <input type="range" id="sb" min="20" max="30" step="0.05">
+      <button class="nudge" data-n="b:1" aria-label="b 增加 0.05">＋</button>
+      <output for="sb" id="ob"></output>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>讓電腦自動調（梯度下降）</h3>
+    <div class="rd" style="margin-bottom:8px">電腦每一步都算：「w 和 b 往哪個方向、調多少，誤差會變小？」然後照著調。</div>
+    <div class="rowflex">
+      <button class="primary" data-auto="1">自動調 1 步</button>
+      <button class="primary" data-auto="10">10 步</button>
+      <button class="primary" data-auto="100">100 步</button>
+      <button id="stop" disabled>停止</button>
+    </div>
+    <div class="rowflex" style="margin-top:8px">
+      <label for="lr" class="rd">每步調多大（學習率）</label>
+      <select id="lr">
+        <option value="0.02">小：很慢但穩</option>
+        <option value="0.1" selected>中：剛剛好</option>
+        <option value="0.3">大：很快</option>
+        <option value="1">太大：會亂跳</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sec rowflex">
+    <button id="reset">重設回起點</button>
+    <button id="best" aria-pressed="false">揭曉最佳答案</button>
+    <span class="count" id="cnt"></span>
+  </div>
+</section>
+
+<section class="card" id="cCurve">
+  <h2>誤差變化：每調一次，誤差有沒有變小？</h2>
+  <svg id="curve" viewBox="0 0 640 260" role="img" aria-label="折線圖：每次調整後的誤差"></svg>
+</section>
+</div>
+
+<footer>
+  <p>本活動改編自 Jay Alammar〈<a href="https://jalammar.github.io/visual-interactive-guide-basics-neural-networks/" target="_blank" rel="noopener">A Visual and Interactive Guide to the Basics of Neural Networks</a>〉（CC BY-NC-SA 4.0）。本頁為繁體中文改作：資料為虛構、旋鈕改為「每 10 公分」與「165 公分基準」、介面與說明重新設計。依相同方式分享，採 CC BY-NC-SA 4.0 授權，僅供非商業教學使用。認識人工智慧（What is AI？）單元四。</p>
+</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+'use strict';
+var DATA=[[150,23.0],[154,23.6],[158,24.1],[162,24.4],[165,25.2],[169,25.4],[173,26.2],[177,26.5],[183,27.6]];
+var N=DATA.length, TARGET=0.25, START={w:0.3,b:22};
+var $=function(s){return document.querySelector(s)};
+var U=function(x){return (x-165)/10};
+var pred=function(x,w,b){return b+w*U(x)};
+function rmse(w,b){var s=0;DATA.forEach(function(d){var e=pred(d[0],w,b)-d[1];s+=e*e});return Math.sqrt(s/N)}
+function ols(){
+  var mu=0,my=0;DATA.forEach(function(d){mu+=U(d[0]);my+=d[1]});mu/=N;my/=N;
+  var c=0,v=0;DATA.forEach(function(d){c+=(U(d[0])-mu)*(d[1]-my);v+=Math.pow(U(d[0])-mu,2)});
+  var w=c/v;return {w:w,b:my-w*mu};
+}
+var BEST=ols(), MINERR=rmse(BEST.w,BEST.b);
+
+var S={w:START.w,b:START.b,hist:[],manual:0,auto:0,reached:null,showBest:false};
+var runToken=0,running=false;
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function pushHist(kind){S.hist.push({err:rmse(S.w,S.b),kind:kind});
+  if(!S.reached&&S.hist[S.hist.length-1].err<=TARGET)S.reached={manual:S.manual,auto:S.auto,err:S.hist[S.hist.length-1].err}}
+function reset(){
+  runToken++;running=false;
+  S.w=START.w;S.b=START.b;S.hist=[];S.manual=0;S.auto=0;S.reached=null;pushHist('start');S.reached=null;
+  render();
+}
+
+/* ---------- 梯度下降（MSE） ---------- */
+function gdStep(lr){
+  var gw=0,gb=0;
+  DATA.forEach(function(d){var e=pred(d[0],S.w,S.b)-d[1];gw+=2*e*U(d[0])/N;gb+=2*e/N});
+  S.w=clamp(S.w-lr*gw,-1000,1000);S.b=clamp(S.b-lr*gb,-1000,1000);
+  S.auto++;pushHist('auto');
+}
+function runAuto(n){
+  if(running)return;
+  var lr=parseFloat($('#lr').value),tok=++runToken,i=0;
+  var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var delay=n===1?0:n<=10?110:35;
+  running=true;setBusy(true);
+  (function tick(){
+    if(tok!==runToken)return;
+    if(i>=n){running=false;setBusy(false);render();return}
+    gdStep(lr);i++;render();
+    if(reduce||delay===0){while(i<n)gdStep(lr),i++;running=false;setBusy(false);render();return}
+    setTimeout(tick,delay);
+  })();
+}
+function setBusy(b){
+  document.querySelectorAll('[data-auto],#reset,.nudge,#sw,#sb,#lr').forEach(function(e){e.disabled=b});
+  $('#stop').disabled=!b;
+}
+
+/* ---------- 作圖 ---------- */
+var W=640,H=400,ML=54,MR=16,MT=14,MB=46,X0=145,X1=190,Y0=21,Y1=29;
+function sx(x){return ML+(x-X0)/(X1-X0)*(W-ML-MR)}
+function sy(y){return H-MB-(y-Y0)/(Y1-Y0)*(H-MT-MB)}
+function f1(v){return (Math.round(v*100)/100).toFixed(2)}
+
+function drawScatter(){
+  var h='<defs><clipPath id="clip"><rect x="'+ML+'" y="'+MT+'" width="'+(W-ML-MR)+'" height="'+(H-MT-MB)+'"/></clipPath></defs>';
+  for(var y=22;y<=28;y++)h+='<line class="gridl" x1="'+ML+'" x2="'+(W-MR)+'" y1="'+sy(y)+'" y2="'+sy(y)+'"/><text x="'+(ML-8)+'" y="'+(sy(y)+4)+'" text-anchor="end">'+y+'</text>';
+  for(var x=150;x<=190;x+=10)h+='<text x="'+sx(x)+'" y="'+(H-MB+18)+'" text-anchor="middle">'+x+'</text>';
+  h+='<line class="axisl" x1="'+ML+'" x2="'+(W-MR)+'" y1="'+(H-MB)+'" y2="'+(H-MB)+'"/>';
+  h+='<text x="'+((ML+W-MR)/2)+'" y="'+(H-6)+'" text-anchor="middle">身高（公分）</text>';
+  h+='<text transform="translate(14 '+((MT+H-MB)/2)+') rotate(-90)" text-anchor="middle">鞋長（公分）</text>';
+  h+='<g clip-path="url(#clip)">';
+  if(S.showBest)h+='<line class="bline" x1="'+sx(X0)+'" y1="'+sy(pred(X0,BEST.w,BEST.b))+'" x2="'+sx(X1)+'" y2="'+sy(pred(X1,BEST.w,BEST.b))+'"/>';
+  h+='<line class="pline" x1="'+sx(X0)+'" y1="'+sy(pred(X0,S.w,S.b))+'" x2="'+sx(X1)+'" y2="'+sy(pred(X1,S.w,S.b))+'"/>';
+  DATA.forEach(function(d){h+='<line class="eseg" x1="'+sx(d[0])+'" x2="'+sx(d[0])+'" y1="'+sy(d[1])+'" y2="'+sy(pred(d[0],S.w,S.b))+'"/>'});
+  h+='</g>';
+  DATA.forEach(function(d,i){h+='<circle class="dot" cx="'+sx(d[0])+'" cy="'+sy(d[1])+'" r="6"/><circle data-i="'+i+'" cx="'+sx(d[0])+'" cy="'+sy(d[1])+'" r="14" fill="transparent"/>'});
+  $('#scatter').innerHTML=h;
+}
+function drawCurve(){
+  var CW=640,CH=260,l=54,r=80,t=14,b=40;
+  var hs=S.hist,n=hs.length,first=hs[0].err,ymax=Math.max(Math.min(Math.max.apply(null,hs.map(function(p){return p.err}))*1.1,first*8),TARGET*2);
+  var xmax=Math.max(10,n-1);
+  var cx=function(i){return l+i/xmax*(CW-l-r)},cy=function(v){return CH-b-clamp(v,0,ymax)/ymax*(CH-t-b)};
+  var h='<defs><clipPath id="cclip"><rect x="'+l+'" y="'+(t-2)+'" width="'+(CW-l-r+6)+'" height="'+(CH-t-b+2)+'"/></clipPath></defs>';
+  var step=ymax>2?1:ymax>1?0.5:0.25;
+  for(var v=0;v<=ymax;v+=step)h+='<line class="gridl" x1="'+l+'" x2="'+(CW-r)+'" y1="'+cy(v)+'" y2="'+cy(v)+'"/><text x="'+(l-8)+'" y="'+(cy(v)+4)+'" text-anchor="end">'+(Math.round(v*100)/100)+'</text>';
+  h+='<line class="axisl" x1="'+l+'" x2="'+(CW-r)+'" y1="'+cy(0)+'" y2="'+cy(0)+'"/>';
+  h+='<line class="tline" x1="'+l+'" x2="'+(CW-r)+'" y1="'+cy(TARGET)+'" y2="'+cy(TARGET)+'"/><text x="'+(CW-r+6)+'" y="'+(cy(TARGET)+4)+'">目標 '+TARGET+'</text>';
+  var tick=Math.max(1,Math.ceil(xmax/8));
+  for(var i=0;i<=xmax;i+=tick)h+='<text x="'+cx(i)+'" y="'+(CH-b+18)+'" text-anchor="middle">'+i+'</text>';
+  h+='<text x="'+((l+CW-r)/2)+'" y="'+(CH-4)+'" text-anchor="middle">調整次數（手動或自動各算一次）</text>';
+  h+='<text transform="translate(14 '+((t+CH-b)/2)+') rotate(-90)" text-anchor="middle">誤差（公分）</text>';
+  var pts=hs.map(function(p,i){return cx(i)+','+cy(p.err)}).join(' ');
+  h+='<g clip-path="url(#cclip)"><polyline class="cline" points="'+pts+'"/></g>';
+  if(n<=40)hs.forEach(function(p,i){if(i<n-1)h+='<circle class="cdot" cx="'+cx(i)+'" cy="'+cy(p.err)+'" r="4"/>'});
+  var last=hs[n-1];
+  h+='<circle class="cdot" cx="'+cx(n-1)+'" cy="'+cy(last.err)+'" r="5"/>';
+  h+='<text class="lab" x="'+(cx(n-1)+(n-1>=xmax*0.85?-8:8))+'" y="'+Math.max(cy(last.err)-10,t+10)+'" text-anchor="'+(n-1>=xmax*0.85?'end':'start')+'">'+f1(last.err)+'</text>';
+  h+='<g id="hov"></g><rect id="hit" x="'+l+'" y="'+t+'" width="'+(CW-l-r)+'" height="'+(CH-t-b)+'" fill="transparent"/>';
+  $('#curve').innerHTML=h;
+  $('#curve')._m={l:l,w:CW-l-r,xmax:xmax,cx:cx,cy:cy,CW:CW};
+}
+function drawTable(){
+  var h='<tr><th>身高</th><th>真實鞋長</th><th>預測</th><th>誤差</th></tr>';
+  DATA.forEach(function(d){var p=pred(d[0],S.w,S.b),e=p-d[1];h+='<tr><td>'+d[0]+' 公分</td><td>'+d[1].toFixed(1)+'</td><td>'+f1(p)+'</td><td>'+(e>=0?'+':'')+f1(e)+'</td></tr>'});
+  $('#tbl').innerHTML=h;
+}
+function render(){
+  var err=rmse(S.w,S.b),first=S.hist[0].err;
+  $('#hero').innerHTML=f1(err)+'<small>公分</small>';
+  var prog=clamp((first-err)/(first-MINERR),0,1);
+  $('#meter').style.width=(prog*100)+'%';
+  $('#goalTxt').textContent='起點 '+f1(first)+' 公分 → 目標 ≤ '+TARGET+' 公分';
+  var bn=$('#banner');
+  if(err<=TARGET){bn.className='banner ok';
+    bn.innerHTML='<b>✓ 達標！</b> 預測平均只差 '+f1(err)+' 公分。'+(S.reached?'第一次達標時：手動 '+S.reached.manual+' 次、自動 '+S.reached.auto+' 步。':'')}
+  else{bn.className='banner';bn.textContent='還沒達標：再調調看，目標是誤差 ≤ '+TARGET+' 公分。'+(err>first*1.5?'（誤差比起點還大，是不是調過頭了？）':'')}
+  $('#eq').innerHTML='預測鞋長 = <b>'+f1(S.b)+'</b> + <b>'+f1(S.w)+'</b> × （身高 − 165）÷ 10';
+  var sw=$('#sw'),sb=$('#sb');
+  sw.value=clamp(S.w,-0.5,3);sb.value=clamp(S.b,20,30);
+  $('#ow').textContent=f1(S.w);$('#ob').textContent=f1(S.b);
+  $('#cnt').textContent='手動 '+S.manual+' 次 · 自動 '+S.auto+' 步';
+  $('#legBest').hidden=!S.showBest;
+  $('#best').setAttribute('aria-pressed',S.showBest);$('#best').textContent=S.showBest?'隱藏最佳答案':'揭曉最佳答案';
+  drawScatter();drawCurve();drawTable();
+}
+
+/* ---------- 互動 ---------- */
+['sw','sb'].forEach(function(id){
+  var el=$('#'+id),key=id==='sw'?'w':'b';
+  el.addEventListener('input',function(){S[key]=parseFloat(el.value);
+    $('#ow').textContent=f1(S.w);$('#ob').textContent=f1(S.b);
+    var err=rmse(S.w,S.b);$('#hero').innerHTML=f1(err)+'<small>公分</small>';
+    $('#eq').innerHTML='預測鞋長 = <b>'+f1(S.b)+'</b> + <b>'+f1(S.w)+'</b> × （身高 − 165）÷ 10';
+    drawScatter();drawTable()});
+  el.addEventListener('change',function(){S[key]=parseFloat(el.value);S.manual++;pushHist('manual');render()});
+});
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.dataset.n){var p=b.dataset.n.split(':'),k=p[0],d=parseInt(p[1],10)*0.05;
+    S[k]=Math.round((S[k]+d)*100)/100;S.manual++;pushHist('manual');render();return}
+  if(b.dataset.auto){runAuto(parseInt(b.dataset.auto,10));return}
+});
+$('#stop').addEventListener('click',function(){runToken++;running=false;setBusy(false);render()});
+$('#reset').addEventListener('click',reset);
+$('#best').addEventListener('click',function(){S.showBest=!S.showBest;render()});
+
+/* ---------- 提示框 ---------- */
+var tip=$('#tip');
+function showTip(x,y,t){tip.textContent=t;tip.style.display='block';
+  var w=tip.offsetWidth;tip.style.left=Math.min(x+14,innerWidth-w-8)+'px';tip.style.top=(y+14)+'px'}
+function hideTip(){tip.style.display='none'}
+$('#scatter').addEventListener('pointermove',function(e){
+  var i=e.target.dataset&&e.target.dataset.i;if(i==null){hideTip();return}
+  var d=DATA[i],p=pred(d[0],S.w,S.b),er=p-d[1];
+  showTip(e.clientX,e.clientY,'身高 '+d[0]+' 公分｜真實鞋長 '+d[1].toFixed(1)+'｜預測 '+f1(p)+'｜誤差 '+(er>=0?'+':'')+f1(er));
+});
+$('#scatter').addEventListener('pointerleave',hideTip);
+$('#curve').addEventListener('pointermove',function(e){
+  var svg=$('#curve'),m=svg._m,box=svg.getBoundingClientRect(),scale=m.CW/box.width;
+  var px=(e.clientX-box.left)*scale,n=S.hist.length;
+  var i=clamp(Math.round((px-m.l)/m.w*m.xmax),0,n-1),p=S.hist[i];
+  var g=$('#hov');g.innerHTML='<line class="tline" x1="'+m.cx(i)+'" x2="'+m.cx(i)+'" y1="14" y2="220"/><circle class="cdot" cx="'+m.cx(i)+'" cy="'+m.cy(p.err)+'" r="5"/>';
+  showTip(e.clientX,e.clientY,(i===0?'起點':'第 '+i+' 次（'+(p.kind==='auto'?'自動':'手動')+'）')+'｜誤差 '+f1(p.err)+' 公分');
+});
+$('#curve').addEventListener('pointerleave',function(){hideTip();var g=$('#hov');if(g)g.innerHTML=''});
+
+reset();
+})();
+</script>
+</body>
+</html>
