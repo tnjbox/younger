@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>逐詞接龍：看 AI 怎麼一個詞一個詞生成</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s1soft:#cde2fb; --s2:#eb6834; --s2soft:#fbe0d4; --gsoft:#e1e0d9;
+  --btn:#256abf; --btnink:#fff; --good:#006300;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s1soft:#184f95; --s2:#d95926; --s2soft:#5a2a14; --gsoft:#383835;
+    --btn:#256abf; --btnink:#fff; --good:#0ca30c;
+  }
+}
+*{box-sizing:border-box}
+html{font-size:16px}
+html.big{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:1.35rem;margin:0}
+h1 small{display:block;font-size:.85rem;font-weight:400;color:var(--ink2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:1rem;margin:0 0 10px;color:var(--ink2);font-weight:600}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:1px solid var(--axis);background:var(--surface);border-radius:8px;padding:6px 12px;min-height:36px}
+button:hover:not(:disabled){background:var(--grid)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--btn);color:var(--btnink);border-color:var(--btn)}
+button.primary:hover:not(:disabled){background:#1c5cab}
+button.small{min-height:28px;padding:2px 8px;font-size:.85rem}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+input[type=text],input[type=number],textarea,select{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:6px 10px;min-height:36px}
+textarea{width:100%;resize:vertical}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tab{border-radius:999px;padding:6px 16px}
+.tab[aria-pressed=true]{background:var(--btn);color:var(--btnink);border-color:var(--btn)}
+.tab .n{opacity:.8;font-size:.85rem;margin-left:4px}
+.sentence{font-size:1.7rem;line-height:1.9;min-height:3.4em;overflow-wrap:anywhere}
+.sentence .start{color:var(--ink)}
+.w{white-space:nowrap;font-weight:600;border-radius:6px;padding:0 4px;margin:0 2px;color:var(--ink)}
+.w.shared{background:var(--gsoft)}
+.w.A{background:var(--s1soft)}
+.w.B{background:var(--s2soft)}
+.caret{color:var(--muted);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.caret{animation:none}}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;color:var(--ink2);font-size:.9rem;margin-top:6px}
+.timer{display:flex;align-items:center;gap:8px;margin-left:auto}
+#tleft{font-size:1.5rem;font-weight:700;min-width:4.2ch;text-align:center}
+#tleft.low{color:#d03b3b}
+#tleft.low::after{content:" ⚠"}
+.cols{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:900px){.cols{grid-template-columns:minmax(260px,5fr) 7fr}}
+.stack{display:flex;flex-direction:column;gap:10px}
+.rowflex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{color:var(--ink2);font-size:.85rem}
+.chart{display:flex;flex-direction:column;gap:6px}
+.crow{display:grid;grid-template-columns:minmax(4.5em,max-content) 1fr auto;gap:4px 10px;align-items:center;padding:4px 6px;border-radius:8px;border:1px solid transparent}
+.crow.win{border-color:var(--s2);background:var(--s2soft)}
+.crow.top .wname{font-weight:700}
+.wname{border:none;background:none;padding:2px 4px;min-height:0;font-size:1.05rem;text-align:left;border-radius:6px}
+.wname:hover:not(:disabled){background:var(--grid)}
+.bar{height:20px;border-radius:0 4px 4px 0;background:var(--s1);min-width:3px;transition:width .25s}
+@media (prefers-reduced-motion:reduce){.bar{transition:none}}
+.barbox{border-left:1px solid var(--axis);padding:2px 0}
+.val{font-size:.95rem;white-space:nowrap;color:var(--ink)}
+.val b{font-weight:700}
+.val span{color:var(--ink2)}
+.sub{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.8rem;color:var(--ink2);padding-left:4px}
+.sub select{min-height:28px;padding:0 6px;font-size:.8rem}
+.empty{color:var(--ink2);padding:16px 4px}
+.hidden-list{font-size:.85rem;color:var(--ink2);margin-top:6px}
+.chip{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--axis);border-radius:999px;padding:0 4px 0 10px;margin:2px 4px 2px 0;background:var(--surface)}
+.chip button{border:none;background:none;min-height:24px;padding:0 6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions button{flex:1 1 200px;padding:10px 14px;text-align:left}
+.actions button b{display:block;font-size:1.05rem}
+.actions button span{font-size:.8rem;opacity:.85;font-weight:400}
+.result{border-top:1px solid var(--grid);margin-top:12px;padding-top:12px}
+.rtitle{font-size:1.15rem;font-weight:600;margin-bottom:10px}
+.rnote{color:var(--ink2);font-size:.95rem;margin-top:8px}
+.seg{position:relative;display:flex;gap:2px;height:44px;border-radius:6px}
+.blk{min-width:0;background:var(--s1);color:#fff;border-radius:4px;display:flex;align-items:center;padding:0;font-size:.9rem;overflow:hidden;white-space:nowrap}
+.blk.lab{padding:0 8px}
+.blk.alt{background:#1c5cab}
+.blk.on{outline:3px solid var(--ink);outline-offset:-3px}
+.blk.win{background:var(--s2);color:#fff}
+.ptr{position:absolute;top:-10px;bottom:-10px;width:0;border-left:3px solid var(--ink);pointer-events:none;display:none}
+.ptr::before{content:"▼";position:absolute;top:-14px;left:-9px;font-size:.9rem;color:var(--ink)}
+.legend{font-size:.8rem;color:var(--ink2);margin-top:6px}
+.cmp{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:900px){.cmp{grid-template-columns:repeat(3,1fr)}}
+.cmpbox{border:1px solid var(--grid);border-radius:10px;padding:10px 12px}
+.cmpbox h3{margin:0 0 4px;font-size:.9rem;color:var(--ink2);font-weight:600}
+.cmpbox .sentence{font-size:1.25rem;line-height:1.8;min-height:0}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.95rem}
+th,td{border-top:1px solid var(--grid);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--ink2);font-weight:600;font-size:.85rem}
+td small{color:var(--ink2);display:block}
+.tag{display:inline-block;font-size:.75rem;border:1px solid var(--axis);border-radius:999px;padding:0 8px;margin-left:4px;color:var(--ink2)}
+details{margin-bottom:14px}
+summary{cursor:pointer;color:var(--ink2);padding:4px 0}
+.set{display:flex;flex-wrap:wrap;gap:10px 18px;padding:10px 0;align-items:end}
+.set label{display:flex;flex-direction:column;font-size:.85rem;color:var(--ink2);gap:2px}
+.note{font-size:.85rem;color:var(--ink2)}
+.note li{margin:2px 0}
+.warn{color:var(--ink2);background:var(--grid);border-radius:8px;padding:8px 12px;font-size:.9rem}
+footer{font-size:.8rem;color:var(--muted);margin:20px 0}
+.irsbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:.9rem;color:var(--ink2)}
+.st i{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.st.ok i{background:#0ca30c}.st.bad i{background:#d03b3b}
+.irsnum{font-size:1rem;color:var(--ink);margin:8px 0 0;min-height:1.6em}
+.irsnum b{font-size:1.35rem}
+.warn{margin-top:8px}
+.warn button{margin:8px 8px 0 0}
+.holdbox{text-align:center;padding:20px 8px 8px}
+.holdbox .big{font-size:3.2rem;font-weight:700;line-height:1.1}
+.holdbox .hint{margin:6px 0 14px}
+.holdbox button{font-size:1.1rem;padding:10px 28px}
+.resume{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:var(--surface);border:2px solid var(--s1);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.resume[hidden]{display:none}
+.resume p{margin:0;flex:1 1 300px}
+#btnReset.armed{background:#b32d2d;border-color:#b32d2d;color:#fff}
+.flash{background:var(--s1soft);color:var(--ink);border-radius:8px;padding:8px 14px;margin:-4px 0 12px;font-weight:600}
+.wipe{border-top:1px solid var(--grid);padding-top:10px;margin-top:4px}
+.wipe .hint{margin:6px 0 0}
+#irsWipe.armed{background:#b32d2d;border-color:#b32d2d;color:#fff}
+.set label.chk{flex-direction:row;align-items:center;gap:6px;font-size:.9rem}
+#irsUrl{width:100%;font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>逐詞接龍：AI 怎麼一個詞一個詞「生成」<small>全班一起決定下一個詞 → 觀察「取最多」與「依比例抽籤」會寫出什麼不同的故事</small></h1>
+  <div class="rowflex">
+    <button id="btnBig" aria-pressed="false">投影模式（放大）</button>
+    <button id="btnReset">清除紀錄，開始新的一輪</button>
+  </div>
+</header>
+<div class="resume" id="resume" role="status" hidden>
+  <p id="resumeTxt"></p>
+  <button class="primary" id="btnNewRound">開始新的一輪</button>
+  <button id="btnKeep">繼續上次</button>
+</div>
+
+<details>
+  <summary>設定（起始句、步數、倒數秒數）與怎麼收集學生回應</summary>
+  <div class="card">
+    <div class="set">
+      <label>起始提示詞（第一回合紙上接龍可沿用）
+        <input type="text" id="setStart" size="34">
+      </label>
+      <label>共同步數<input type="number" id="setShared" min="1" max="3" style="width:6em"></label>
+      <label>句子 A／B 各再接幾步<input type="number" id="setBranch" min="1" max="6" style="width:6em"></label>
+      <label>每步倒數秒數<input type="number" id="setSecs" min="10" max="300" step="5" style="width:6em"></label>
+    </div>
+    <ul class="note">
+      <li><b>學生回應只要「一個詞」</b>（例：看見、一隻貓）。空白、全形半形、句尾標點會自動統一，所以「看見」「看見。」「 看見」會算同一個。</li>
+      <li><b>收集方式 1：IRS 連線（建議）。</b>學生用「學生端-接龍.html」送出一個詞，本頁每 2 秒自動抓取。<b>上課前先開一題全新的</b>：換新班級時，可在「IRS 設定」按「清除 IRS 全部資料」回到第 1 題；若要保留舊紀錄，就按「IRS 下一題」從目前題號往後接。之後每按「採用，接下一步」，IRS 會自動換下一題（可在「IRS 設定」關閉）。</li>
+      <li><b>收集方式 2：</b>在「手動加入」欄輸入單一詞 + Enter，或一次貼上多行（換行、逗號、頓號都可分隔）；也可在「編輯模式」按「＋1／−1」用舉手計票。IRS 與手動輸入的數量會加在一起。</li>
+      <li><b>公布前先隱藏：</b>連線 IRS 時，學生作答期間只顯示「已收到幾筆」，按「公布結果」才出現長條圖，避免同學看了多數答案跟著寫。公布後才送來的回應不會自動計入，可按「計入最新回應」。</li>
+      <li><b>進階：</b>本頁也提供 <code>window.addWords(["看見","一隻貓"])</code> 與 <code>postMessage({words:[…]})</code>，供其他系統送詞進來。</li>
+      <li><b>演練：</b>按「模擬學生」會加入假資料，上課前請先「清空本步」。</li>
+      <li>回應近義詞（看見／看到）可用「合併到…」；不適當的詞可「隱藏」。紀錄會自動存在這台電腦的瀏覽器，重新整理不會消失。</li>
+    </ul>
+  </div>
+</details>
+
+<div class="tabs" id="tabs" role="group" aria-label="切換句子"></div>
+<div class="flash" id="flash" role="status" hidden></div>
+
+<section class="card" aria-live="polite">
+  <h2 id="sentTitle">目前句子</h2>
+  <div class="sentence" id="sentence"></div>
+  <div class="meta">
+    <span id="stepInfo"></span>
+    <span class="timer">
+      <span id="tleft" role="timer">01:00</span>
+      <button id="tstart">開始倒數</button>
+      <button id="treset">重設</button>
+    </span>
+  </div>
+</section>
+
+<div class="cols">
+  <div class="stack" style="gap:14px">
+  <section class="card" id="irsCard">
+    <h2>IRS 即時收集</h2>
+    <div class="irsbar"><button id="irsToggle" class="primary">連線 IRS</button><span class="st" id="irsSt"><i></i><span id="irsStTxt">未連線（可用下方手動輸入）</span></span></div>
+    <div class="irsnum" id="irsNum"></div>
+    <div id="irsWarn" class="warn" hidden></div>
+    <div class="rowflex" style="margin-top:10px"><button id="irsNext">IRS 下一題</button><button id="irsClear">清空 IRS 本題</button></div>
+    <details style="margin:10px 0 0"><summary>IRS 設定</summary>
+      <div class="set">
+        <label style="flex:1 1 100%">GAS 網址（與學生端相同）<input type="text" id="irsUrl" spellcheck="false" autocomplete="off"></label>
+        <label>班級人數<input type="number" id="irsCls" min="1" max="50" style="width:6em"></label>
+        <label class="chk"><input type="checkbox" id="irsAuto">採用後自動進入 IRS 下一題</label>
+        <label class="chk"><input type="checkbox" id="irsHold">公布前先隱藏長條圖</label>
+      </div>
+      <div class="wipe">
+        <button id="irsWipe">清除 IRS 全部資料（回到第 1 題）</button>
+        <p class="hint">會刪除這個 IRS 所有題目的作答紀錄，<b>包含其他單元的學習歷程</b>。建議換新班級、上課前使用；要保留的紀錄請先到 Google 試算表備份。本頁的接龍紀錄不受影響。</p>
+      </div>
+    </details>
+  </section>
+  <section class="card">
+    <h2>手動加入（演練／舉手計票）</h2>
+    <div class="stack">
+      <div class="rowflex">
+        <input type="text" id="one" placeholder="輸入一個詞，按 Enter" aria-label="輸入一個詞" style="flex:1 1 160px">
+        <button id="addOne">加入</button>
+      </div>
+      <textarea id="paste" rows="4" placeholder="一次貼上多筆，換行或逗號分隔" aria-label="貼上多筆回應"></textarea>
+      <div class="rowflex">
+        <button id="addPaste">加入貼上內容</button>
+        <button id="demo" title="加入約 24 筆假資料，供上課前演練">模擬學生（演練用）</button>
+        <button id="clearStep">清空本步</button>
+      </div>
+      <div id="doneNote" class="warn" hidden></div>
+    </div>
+  </section>
+  </div>
+
+  <section class="card">
+    <div class="rowflex" style="justify-content:space-between;margin-bottom:10px"><h2 id="chartTitle" style="margin:0">全班回應</h2><button id="btnEdit" class="small" aria-pressed="false">編輯模式（＋1／合併／隱藏）</button></div>
+    <div class="chart" id="chart"></div>
+    <div class="hidden-list" id="hiddenList"></div>
+    <div class="actions" style="margin-top:14px">
+      <button id="btnMax" class="primary"><b>取最多</b><span>永遠選最多人寫的詞；並列時隨機選</span></button>
+      <button id="btnDraw" class="primary"><b>依比例抽籤</b><span>票越多機率越高，但少數派也有機會</span></button>
+    </div>
+    <div class="result" id="result" hidden>
+      <div class="rtitle" id="rtitle"></div>
+      <div class="seg" id="seg"><div class="ptr" id="ptr"></div></div>
+      <div class="legend">色塊寬度 = 該詞的得票比例（也就是被抽中的機率）</div>
+      <div class="rnote" id="rnote"></div>
+      <div class="rowflex" style="margin-top:10px">
+        <button id="adopt" class="primary"></button>
+        <button id="redo">再來一次</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <h2>並排比較（可直接投影）</h2>
+  <div class="cmp" id="cmp"></div>
+  <table id="rec"><thead></thead><tbody></tbody></table>
+  <p class="hint" style="margin-bottom:0">討論：句子 A 與 B 的開頭一樣，為什麼後面長得不一樣？「取最多」安全但很無聊；「抽籤」有創意也可能離題或出錯 —— 這就是生成式 AI 的「隨機性」與「幻覺」。</p>
+</section>
+
+<section class="card">
+  <h2>這個遊戲和真正的 AI 不一樣的地方</h2>
+  <ul class="note">
+    <li>真正的 AI 每一步都「讀完整段前文」再預測，不是只看最後一個詞。</li>
+    <li>是「一個模型」算出每個候選詞的機率，不是一群人投票；機率來自大量文字的訓練。</li>
+    <li>AI 處理的單位是「詞元（token）」，可能是一個字、半個詞或標點，不一定是完整的詞。</li>
+  </ul>
+</section>
+<footer>逐詞接龍 · 認識人工智慧（What is AI？）單元四教學用。單檔可離線使用（連線 IRS 時需要網路）。接龍紀錄只存在本機瀏覽器；本頁只讀取 IRS 的文字回應，不讀取、不儲存學生姓名。</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var KEY='whatisai-chain-v1';
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var LABEL={shared:'共同第一步',A:'句子 A：取最多',B:'句子 B：依比例抽籤'};
+var DEFAULT_URL='https://script.google.com/macros/s/AKfycbzcTuJoyN0kBI1bmmGmxOVoQCpMA2haE0ZAUHbDVEW6KVM85kTTm507JJIcMhXCFsOf/exec';
+var DEMO=[["看見",8],["一隻",6],["看到",3],["聽見",4],["有人",3],["一道閃電",2],["外星人",1],["恐龍",1],["雨停了",2],["我的貓",1],["一把傘",2]];
+
+/* cur：raws＝手動輸入；irs＝IRS 快照 [{seat,w}]；q＝綁定的 IRS 題號；sub＝對 IRS 的 −1 */
+function newCur(){return {raws:[],merge:{},hidden:[],irs:[],q:null,sub:{},revealed:false,locked:false,stale:false}}
+function defIrs(){return {url:DEFAULT_URL,cls:35,autoNext:true,hold:true,on:false}}
+function fresh(){return {start:'下雨天，我走在回家的路上，突然',sharedN:1,branchN:3,secs:60,track:'shared',irs:defIrs(),
+  tracks:{shared:{steps:[],cur:newCur()},A:{steps:[],cur:newCur()},B:{steps:[],cur:newCur()}}}}
+function fixState(s){
+  var d=newCur();
+  ['shared','A','B'].forEach(function(t){var c=s.tracks[t].cur||{};Object.keys(d).forEach(function(k){if(c[k]===undefined)c[k]=d[k]});s.tracks[t].cur=c;s.tracks[t].steps=s.tracks[t].steps||[]});
+  s.irs=Object.assign(defIrs(),s.irs||{});return s;
+}
+var S=load();
+var cand=null, animating=false, resetArmed=false, editMode=false;
+var T={left:S.secs,running:false,id:null};
+
+function load(){
+  try{var s=JSON.parse(localStorage.getItem(KEY));
+    if(s&&s.tracks&&s.tracks.shared&&s.tracks.A&&s.tracks.B) return fixState(s);}catch(e){}
+  return fresh();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- 文字正規化 ---------- */
+function norm(s){
+  s=String(s).normalize('NFKC').replace(/\s+/g,'');
+  s=s.replace(/^["'“‘「『(\[（]+/,'').replace(/["'”’」』)\]）]+$/,'');
+  s=s.replace(/[。，、！？!?.,;；:：…~～]+$/,'');
+  return s.toLowerCase().slice(0,20);
+}
+function limitOf(t){return t==='shared'?S.sharedN:S.branchN}
+function isDone(t){return S.tracks[t].steps.length>=limitOf(t)}
+
+/* ---------- 統計 ---------- */
+function canon(cur,n){var k=0;while(cur.merge[n]&&k++<20)n=cur.merge[n];return n}
+function tally(t){
+  var cur=S.tracks[t].cur,map={},order=[];
+  allRaws(cur).forEach(function(r){
+    var c=canon(cur,r);
+    if(cur.hidden.indexOf(c)>-1)return;
+    if(!map[c]){map[c]={w:c,count:0,alias:{}};order.push(c)}
+    map[c].count++;
+    if(r!==c)map[c].alias[r]=(map[c].alias[r]||0)+1;
+  });
+  var arr=order.map(function(c){return map[c]});
+  arr.forEach(function(x){x.count=Math.max(0,x.count-(cur.sub[x.w]||0))});
+  arr=arr.filter(function(x){return x.count>0});
+  arr.sort(function(a,b){return b.count-a.count});
+  return arr;
+}
+function allRaws(cur){return cur.raws.concat(cur.irs.map(function(x){return x.w}))}
+function isHolding(){var c=S.tracks[S.track].cur;return IRS.on&&S.irs.hold&&!c.revealed&&!isDone(S.track)}
+function lockCur(){S.tracks[S.track].cur.locked=true}
+function totalOf(a){return a.reduce(function(s,x){return s+x.count},0)}
+function pct(n,t){return t?Math.round(n/t*100):0}
+
+/* ---------- 加入回應 ---------- */
+function addWords(list){
+  var t=S.track; if(isDone(t))return 0;
+  var added=0;
+  (Array.isArray(list)?list:[list]).forEach(function(item){
+    String(item==null?'':item).split(/[\n\r\t,，、;；]+/).forEach(function(p){
+      var n=norm(p); if(n){S.tracks[t].cur.raws.push(n);added++}
+    });
+  });
+  if(added){cand=null;hideResult();save();render()}
+  return added;
+}
+window.addWords=addWords;
+window.addEventListener('message',function(e){
+  var d=e.data,arr=null;
+  if(typeof d==='string')arr=[d];
+  else if(Array.isArray(d))arr=d;
+  else if(d&&Array.isArray(d.words))arr=d.words;
+  else if(d&&typeof d.word==='string')arr=[d.word];
+  if(arr)addWords(arr);
+});
+
+/* ---------- 選詞 ---------- */
+function tops(a){if(!a.length)return[];var m=a[0].count;return a.filter(function(x){return x.count===m}).map(function(x){return x.w})}
+function pickMax(){
+  var a=tally(S.track); if(!a.length)return;
+  lockCur();
+  var tp=tops(a),w=tp[Math.floor(Math.random()*tp.length)];
+  cand={track:S.track,word:w,method:'max',tie:tp.length>1,tops:tp,r:null};
+  showResult(false);
+}
+function pickDraw(){
+  var a=tally(S.track),tot=totalOf(a); if(!tot||animating)return;
+  lockCur();
+  var r=Math.random(),acc=0,w=a[a.length-1].w;
+  for(var i=0;i<a.length;i++){acc+=a[i].count/tot;if(r<acc){w=a[i].w;break}}
+  cand={track:S.track,word:w,method:'draw',tie:false,tops:tops(a),r:r};
+  showResult(true);
+}
+function pickManual(w){
+  if(animating||isHolding())return;
+  lockCur();
+  var a=tally(S.track);
+  cand={track:S.track,word:w,method:'manual',tie:false,tops:tops(a),r:null};
+  showResult(false);
+}
+function methodName(m){return m==='max'?'取最多':m==='draw'?'依比例抽籤':'老師指定'}
+
+function hideResult(){$('#result').hidden=true}
+function showResult(animate){
+  var a=tally(S.track),tot=totalOf(a),seg=$('#seg'),ptr=$('#ptr');
+  seg.querySelectorAll('.blk').forEach(function(b){b.remove()});
+  var cum=0,blocks=[];
+  a.forEach(function(x,i){
+    var b=document.createElement('div');
+    b.className='blk'+(i%2?' alt':'');
+    b.style.flex=x.count+' 1 0';
+    b.title=x.w+'：'+x.count+' 票（'+pct(x.count,tot)+'%）';
+    if(x.count/tot>=0.09){b.textContent=x.w;b.classList.add('lab')}
+    seg.appendChild(b);
+    blocks.push({el:b,w:x.w,from:cum,to:cum+x.count/tot});cum+=x.count/tot;
+  });
+  $('#result').hidden=false;
+  var c=cand, share=pct((a.filter(function(x){return x.w===c.word})[0]||{count:0}).count,tot);
+  $('#adopt').textContent='採用「'+c.word+'」，接下一步';
+  $('#redo').style.display=c.method==='manual'?'none':'';
+  $('#redo').disabled=false;
+  function finish(){
+    blocks.forEach(function(b){b.el.classList.remove('on');b.el.classList.toggle('win',b.w===c.word)});
+    ptr.style.display='none';
+    var t='',n='';
+    if(c.method==='max'){
+      t='取最多 → 「'+c.word+'」';
+      n=c.tie?'有 '+c.tops.length+' 個詞並列最多（'+c.tops.join('、')+'），從中隨機選出「'+c.word+'」。':'「'+c.word+'」得票最多，所以一定被選中——每次都會是同一個答案。';
+    }else if(c.method==='draw'){
+      t='抽到 → 「'+c.word+'」（被抽中的機率 '+share+'%）';
+      n=c.tops.indexOf(c.word)>-1?'這次抽到的剛好是最多票的詞，但按「再來一次」可能就不同。':'這次抽到的「不是」最多票的詞！票少的詞也有機會，所以每次結果都可能不同。';
+    }else{
+      t='老師指定 → 「'+c.word+'」';n='由老師直接選定這個詞。';
+    }
+    $('#rtitle').textContent=t;$('#rnote').textContent=n;
+    animating=false;updateButtons();
+  }
+  if(animate&&!window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+    animating=true;updateButtons();
+    $('#rtitle').textContent='抽籤中…';$('#rnote').textContent='';
+    ptr.style.display='block';
+    var t0=performance.now(),dur=1700,target=2+c.r;
+    (function step(now){
+      var k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3),p=target*e,x=p%1;
+      ptr.style.left=(x*100)+'%';
+      blocks.forEach(function(b){b.el.classList.toggle('on',x>=b.from&&x<b.to)});
+      if(k<1)requestAnimationFrame(step);else finish();
+    })(performance.now());
+  }else finish();
+}
+
+function nextTrack(){var o=['shared','A','B'];for(var i=0;i<o.length;i++)if(!isDone(o[i]))return o[i];return null}
+var flashT=null;
+function flash(msg){var f=$('#flash');f.textContent=msg;f.hidden=!msg;if(flashT)clearTimeout(flashT);if(msg)flashT=setTimeout(function(){f.hidden=true},8000)}
+function commit(){
+  if(!cand||animating)return;
+  var t=cand.track,tr=S.tracks[t],a=tally(t),tot=totalOf(a),oldQ=tr.cur.q;
+  var hit=a.filter(function(x){return x.w===cand.word})[0];
+  tr.steps.push({word:cand.word,method:cand.method,tie:cand.tie,tops:cand.tops,
+    count:hit?hit.count:0,total:tot,raws:tr.cur.raws.slice(),merge:JSON.parse(JSON.stringify(tr.cur.merge)),hidden:tr.cur.hidden.slice(),
+    irs:tr.cur.irs.slice(),q:tr.cur.q,sub:JSON.parse(JSON.stringify(tr.cur.sub))});
+  tr.cur=newCur();cand=null;hideResult();
+  /* 其他句子若也綁到同一題（且還沒用），解除綁定，避免重複使用同一題的回應 */
+  ['shared','A','B'].forEach(function(o){var c=S.tracks[o].cur;
+    if(o!==t&&oldQ!=null&&c.q===oldQ){c.q=null;c.irs=[];c.sub={};c.locked=false;c.revealed=false;c.stale=false}});
+  /* 這一句接完 → 自動切到下一個還沒完成的句子 */
+  if(isDone(t)){var nx=nextTrack();if(nx){S.track=nx;flash('「'+LABEL[t]+'」完成，已自動切換到「'+LABEL[nx]+'」，請學生寫下一個詞。')}}
+  if(IRS.on&&S.irs.autoNext)irsNext(false);
+  stopTimer();T.left=S.secs;
+  save();render();
+}
+/* 可以復原哪一句：目前句子有步驟就復原它；句子 A、B 都還沒開始時，也可以從 A／B 復原共同第一步 */
+function undoTarget(){
+  var t=S.track,branches=S.tracks.A.steps.length+S.tracks.B.steps.length;
+  if(S.tracks[t].steps.length)return (t==='shared'&&branches)?null:t;
+  if(t!=='shared'&&!branches&&S.tracks.shared.steps.length)return 'shared';
+  return null;
+}
+function undo(){
+  var t=undoTarget(); if(!t||animating)return;
+  S.track=t;var tr=S.tracks[t];
+  var s=tr.steps.pop();
+  tr.cur=Object.assign(newCur(),{raws:s.raws,merge:s.merge,hidden:s.hidden,irs:s.irs||[],q:s.q==null?null:s.q,sub:s.sub||{},revealed:true,locked:true});
+  cand=null;hideResult();save();render();
+}
+
+/* ---------- 倒數 ---------- */
+function fmt(n){var m=Math.floor(n/60),s=n%60;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s}
+function drawTimer(){var el=$('#tleft');el.textContent=T.left>0||T.running?fmt(T.left):'時間到';el.classList.toggle('low',T.left<=10&&T.left>0&&T.running);
+  $('#tstart').textContent=T.running?'暫停':'開始倒數'}
+function stopTimer(){if(T.id)clearInterval(T.id);T.id=null;T.running=false}
+function toggleTimer(){
+  if(T.running){stopTimer();drawTimer();return}
+  if(T.left<=0)T.left=S.secs;
+  T.running=true;
+  T.id=setInterval(function(){T.left--;if(T.left<=0){T.left=0;stopTimer()}drawTimer()},1000);
+  drawTimer();
+}
+
+/* ---------- 畫面 ---------- */
+function sentenceHTML(t){
+  var h='<span class="start">'+esc(S.start)+'</span>';
+  S.tracks.shared.steps.forEach(function(s){h+='<mark class="w shared">'+esc(s.word)+'</mark>'});
+  if(t!=='shared')S.tracks[t].steps.forEach(function(s){h+='<mark class="w '+t+'">'+esc(s.word)+'</mark>'});
+  return h;
+}
+function stepNo(t){return t==='shared'?S.tracks.shared.steps.length+1:S.sharedN+S.tracks[t].steps.length+1}
+function totalSteps(t){return t==='shared'?S.sharedN:S.sharedN+S.branchN}
+
+function renderTabs(){
+  var h='';
+  ['shared','A','B'].forEach(function(t){
+    var n=S.tracks[t].steps.length,lim=limitOf(t);
+    h+='<button class="tab" data-t="'+t+'" aria-pressed="'+(S.track===t)+'">'+LABEL[t]+'<span class="n">'+n+'/'+lim+'</span></button>';
+  });
+  $('#tabs').innerHTML=h;
+}
+function renderChart(){
+  var t=S.track,cur=S.tracks[t].cur,a=tally(t),tot=totalOf(a),max=a.length?a[0].count:1,tp=tops(a);
+  var done=isDone(t);
+  $('#chartTitle').textContent='全班回應（本步共 '+tot+' 筆）';
+  if(done){
+    var nx=nextTrack();
+    $('#chart').innerHTML='<div class="holdbox"><div class="big" style="font-size:1.6rem">這一句已完成 ✓</div>'
+      +(nx?'<div class="hint">請切換到下一句，學生的新回應會出現在那裡。</div><button class="primary" data-t="'+nx+'">前往「'+LABEL[nx]+'」</button>'
+          :'<div class="hint">三句都完成了，請往下看「並排比較」。</div>')+'</div>';
+    $('#hiddenList').innerHTML='';return;
+  }
+  if(isHolding()){
+    $('#chart').innerHTML='<div class="holdbox"><div class="hint">已收到</div><div class="big">'+tot+' <span style="font-size:1.2rem;font-weight:500">筆回應</span></div>'
+      +'<div class="hint">IRS '+cur.irs.length+' 人'+(cur.raws.length?' ＋ 手動 '+cur.raws.length+' 筆':'')+' · 作答中先不公布，避免跟著多數寫</div>'
+      +'<button class="primary" data-act="reveal"'+(tot?'':' disabled')+'>公布結果</button></div>';
+    $('#hiddenList').innerHTML='';return;
+  }
+  if(!a.length){$('#chart').innerHTML='<div class="empty">'+(done?'這一句已完成。':IRS.on?'等待學生從 IRS 送出「下一個詞」…':'尚無回應。請學生寫出「下一個詞」，再由左側加入；也可按「模擬學生」演練。')+'</div>'}
+  else{
+    var h='';
+    a.forEach(function(x){
+      var al=Object.keys(x.alias).map(function(k){return k+'×'+x.alias[k]}).join('、');
+      var others=a.filter(function(y){return y.w!==x.w}).map(function(y){return '<option value="'+esc(y.w)+'">'+esc(y.w)+'</option>'}).join('');
+      var isWin=cand&&cand.track===t&&cand.word===x.w&&!animating;
+      h+='<div class="crow'+(tp.indexOf(x.w)>-1?' top':'')+(isWin?' win':'')+'" title="'+esc(x.w)+'：'+x.count+' 筆（'+pct(x.count,tot)+'%）">'
+        +'<button class="wname" data-pick="'+esc(x.w)+'" title="點一下：由老師指定這個詞"'+(done?' disabled':'')+'>'+esc(x.w)+'</button>'
+        +'<div class="barbox"><div class="bar" style="width:'+(x.count/max*100)+'%"></div></div>'
+        +'<div class="val"><b>'+x.count+'</b> <span>· '+pct(x.count,tot)+'%</span></div>'
+        +(editMode?'<div class="sub">'
+        +'<button class="small" data-inc="'+esc(x.w)+'" aria-label="加一票" '+(done?'disabled':'')+'>＋1</button>'
+        +'<button class="small" data-dec="'+esc(x.w)+'" aria-label="減一票">−1</button>'
+        +(a.length>1?'<select data-merge="'+esc(x.w)+'" aria-label="合併 '+esc(x.w)+' 到…"><option value="">合併到…</option>'+others+'</select>':'')
+        +'<button class="small" data-hide="'+esc(x.w)+'">隱藏</button>'
+        +(al?'<span>含：'+esc(al)+'</span>':'')
+        +'</div>':(al?'<div class="sub">含：'+esc(al)+'</div>':''))
+        +'</div>';
+    });
+    $('#chart').innerHTML=h;
+  }
+  $('#hiddenList').innerHTML=cur.hidden.length?'已隱藏：'+cur.hidden.map(function(w){return '<span class="chip">'+esc(w)+'<button data-show="'+esc(w)+'" aria-label="還原 '+esc(w)+'">還原</button></span>'}).join(''):'';
+}
+function updateButtons(){
+  var t=S.track,a=tally(t),dis=animating||!a.length||isDone(t)||isHolding();
+  $('#btnMax').disabled=dis;$('#btnDraw').disabled=dis;
+  $('#adopt').disabled=animating;$('#redo').disabled=animating;
+}
+function renderCompare(){
+  var h='';
+  ['shared','A','B'].forEach(function(t){
+    h+='<div class="cmpbox"><h3>'+LABEL[t]+'</h3><div class="sentence">'+sentenceHTML(t)+'</div></div>';
+  });
+  $('#cmp').innerHTML=h;
+  var thead='<tr><th>第幾個詞</th><th>共同</th><th>句子 A（取最多）</th><th>句子 B（抽籤）</th></tr>';
+  $('#rec thead').innerHTML=thead;
+  function cell(s){
+    if(!s)return '<td class="hint">—</td>';
+    var tag='';
+    if(s.method==='max'&&s.tie)tag='<span class="tag">並列後隨機</span>';
+    if(s.method==='draw')tag=s.tops.indexOf(s.word)>-1?'':'<span class="tag">不是最多票</span>';
+    if(s.method==='manual')tag='<span class="tag">老師指定</span>';
+    return '<td><b>'+esc(s.word)+'</b>'+tag+'<small>'+s.count+' / '+s.total+' 票（'+pct(s.count,s.total)+'%）</small></td>';
+  }
+  var rows='',tot=S.sharedN+S.branchN;
+  for(var k=1;k<=tot;k++){
+    if(k<=S.sharedN){
+      rows+='<tr><td>'+k+'</td>'+cell(S.tracks.shared.steps[k-1]).replace('<td','<td colspan="3"')+'</tr>';
+    }else{
+      var i=k-S.sharedN-1;
+      rows+='<tr><td>'+k+'</td><td class="hint">共同</td>'+cell(S.tracks.A.steps[i])+cell(S.tracks.B.steps[i])+'</tr>';
+    }
+  }
+  $('#rec tbody').innerHTML=rows;
+}
+function render(){
+  var t=S.track,tr=S.tracks[t],done=isDone(t);
+  renderTabs();
+  $('#sentTitle').textContent=LABEL[t];
+  $('#sentence').innerHTML=sentenceHTML(t)+(done?'':'<span class="caret">▍</span>');
+  $('#stepInfo').textContent=done?'這句已完成（共 '+totalSteps(t)+' 個詞）':'現在要接：第 '+stepNo(t)+' 個詞（共 '+totalSteps(t)+' 個）';
+  var note=$('#doneNote');
+  if(done){
+    note.hidden=false;
+    note.textContent=t==='shared'?'共同步驟完成！請切換到「句子 A」或「句子 B」，兩句從同一個開頭分岔。':'這一句已接完。可切換到另一句，或往下看並排比較。若要重做最後一步請按「復原上一步」。';
+    if(!note.querySelector('button')){}
+  }else note.hidden=true;
+  var un=document.getElementById('undoBtn');
+  if(!un){un=document.createElement('button');un.id='undoBtn';un.textContent='復原上一步';un.addEventListener('click',undo);$('.meta').insertBefore(un,$('.timer'))}
+  un.disabled=!undoTarget();
+  $('#setStart').value=S.start;$('#setShared').value=S.sharedN;$('#setBranch').value=S.branchN;$('#setSecs').value=S.secs;
+  ['one','paste','addOne','addPaste','demo'].forEach(function(id){document.getElementById(id).disabled=done});
+  renderChart();updateButtons();renderCompare();drawTimer();renderIRS();
+}
+
+/* ---------- IRS 連線（沿用原 IRS 的 GAS：getStats / nextQ / resetCurrent） ---------- */
+var IRS={on:false,timer:null,busy:false,pending:false,q:null,latest:[],lastOk:0,err:'',conflict:'',justNext:false,clearArmed:false,nextAt:0,waiting:false};
+function irsUrl(a){var u=(S.irs.url||'').trim();return u+(u.indexOf('?')>-1?'&':'?')+'action='+a+'&t='+Date.now()}
+function irsCall(a){return fetch(irsUrl(a),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function qOwner(q,self){
+  var found='';
+  ['shared','A','B'].forEach(function(t){
+    var name=LABEL[t].split('：')[0];
+    S.tracks[t].steps.forEach(function(s,i){if(!found&&s.q===q)found=name+(t==='shared'?'':' 第 '+(i+1)+' 步')});
+    var c=S.tracks[t].cur;
+    if(!found&&c!==self&&c.q===q&&(c.irs.length||c.raws.length))found=name+'（進行中）';
+  });
+  return found;
+}
+function irsPoll(){
+  if(!IRS.on||IRS.busy||IRS.pending)return;
+  IRS.busy=true;
+  irsCall('getStats').then(function(d){IRS.err='';IRS.lastOk=Date.now();onStats(d)},function(e){IRS.err=(e&&e.message)||'連線失敗'})
+  .then(function(){IRS.busy=false;renderIRS()});
+}
+function onStats(d){
+  if(!d||d.currentQ==null){IRS.err='IRS 回傳的格式看不懂';return}
+  if(IRS.pending)return;
+  var q=Number(d.currentQ),items=[];
+  var det=Array.isArray(d.details)?d.details.slice(0,S.irs.cls):[];
+  det.forEach(function(x){if(x&&x.text!=null){var w=norm(x.text);if(w)items.push({seat:x.seat,w:w})}});
+  IRS.q=q;IRS.latest=items;IRS.conflict='';IRS.waiting=false;
+  var fc=IRS.freshConnect;IRS.freshConnect=false;
+  var t=S.track,cur=S.tracks[t].cur;
+  if(isDone(t))return;
+  if(cur.q==null){
+    var own=qOwner(q,cur);
+    if(own){
+      /* 剛換題時 IRS 可能還回傳舊題號：先等一下，不要叫老師再按下一題 */
+      if(Date.now()-IRS.nextAt<10000){IRS.waiting=true;return}
+      IRS.conflict=own;return;
+    }
+    /* 剛換題的前幾秒就已經有回應 → 可能是以前留下的舊資料 */
+    cur.q=q;cur.stale=items.length>0&&(fc||(IRS.justNext&&Date.now()-IRS.nextAt<4000));IRS.justNext=false;save();
+  }
+  if(cur.q!==q||cur.locked)return;
+  if(!same(items,cur.irs)){cur.irs=items;save();renderChart();updateButtons()}
+}
+function irsNext(manual){
+  if(!IRS.on||IRS.pending)return;
+  if(manual&&!isDone(S.track)){
+    var c=S.tracks[S.track].cur;
+    c.q=null;c.irs=[];c.sub={};c.revealed=false;c.locked=false;c.stale=false;cand=null;hideResult();
+  }
+  IRS.pending=true;IRS.err='';IRS.conflict='';renderIRS();
+  irsCall('nextQ').then(function(r){if(!r||r.status!=='success')throw new Error('IRS 沒有回覆成功');IRS.justNext=true;IRS.nextAt=Date.now()})
+  .catch(function(e){IRS.err='換題失敗：'+((e&&e.message)||'')+'，請按「IRS 下一題」重試'})
+  .then(function(){IRS.pending=false;save();render();irsPoll()});
+}
+function irsClear(btn){
+  if(!IRS.on||IRS.pending)return;
+  if(!IRS.clearArmed){
+    IRS.clearArmed=true;btn.textContent='再按一次：刪除 IRS 第 '+IRS.q+' 題的回應';
+    setTimeout(function(){IRS.clearArmed=false;btn.textContent='清空 IRS 本題'},4000);return;
+  }
+  IRS.clearArmed=false;btn.textContent='清空 IRS 本題';
+  IRS.pending=true;renderIRS();
+  irsCall('resetCurrent').then(function(r){
+    if(!r||r.status!=='success')throw new Error('IRS 沒有回覆成功');
+    var c=S.tracks[S.track].cur;
+    if(c.q===IRS.q){c.irs=[];c.sub={};c.stale=false;c.locked=false;c.revealed=false;cand=null;hideResult()}
+  }).catch(function(e){IRS.err='清空失敗：'+((e&&e.message)||'')})
+  .then(function(){IRS.pending=false;save();render();irsPoll()});
+}
+function irsWipe(btn){
+  if(!IRS.on||IRS.pending)return;
+  if(!IRS.wipeArmed){
+    IRS.wipeArmed=true;btn.classList.add('armed');btn.textContent='再按一次確認：刪除 IRS 全部題目的資料';
+    setTimeout(function(){IRS.wipeArmed=false;btn.classList.remove('armed');btn.textContent='清除 IRS 全部資料（回到第 1 題）'},5000);return;
+  }
+  IRS.wipeArmed=false;btn.classList.remove('armed');btn.textContent='清除 IRS 全部資料（回到第 1 題）';
+  IRS.pending=true;IRS.err='';renderIRS();
+  irsCall('resetAll').then(function(r){
+    if(!r||r.status!=='success')throw new Error('IRS 沒有回覆成功');
+    /* IRS 題號重新從 1 開始：舊題號全部失效，接龍頁保留文字紀錄、解除題號綁定 */
+    ['shared','A','B'].forEach(function(t){
+      S.tracks[t].steps.forEach(function(st){st.q=null});
+      var c=S.tracks[t].cur;c.q=null;c.irs=[];c.sub={};c.locked=false;c.revealed=false;c.stale=false;
+    });
+    IRS.justNext=false;IRS.conflict='';cand=null;hideResult();
+  }).catch(function(e){IRS.err='清除失敗：'+((e&&e.message)||'')})
+  .then(function(){IRS.pending=false;save();render();irsPoll()});
+}
+function irsSetOn(on){
+  if(on&&!/^https?:\/\//.test((S.irs.url||'').trim())){IRS.err='請先在「IRS 設定」填入 GAS 網址';renderIRS();return}
+  IRS.on=on;S.irs.on=on;IRS.freshConnect=on;IRS.err='';IRS.conflict='';IRS.lastOk=0;IRS.q=null;IRS.latest=[];
+  if(IRS.timer){clearInterval(IRS.timer);IRS.timer=null}
+  if(on){irsPoll();IRS.timer=setInterval(irsPoll,2000)}
+  save();render();
+}
+function renderIRS(){
+  var on=IRS.on,cur=S.tracks[S.track].cur,tg=$('#irsToggle');
+  tg.textContent=on?'中斷連線':'連線 IRS';tg.className=on?'':'primary';
+  var st=$('#irsSt'),tx;
+  if(!on){st.className='st';tx=IRS.err||'未連線（可用下方手動輸入）'}
+  else if(IRS.pending){st.className='st ok';tx='處理中…'}
+  else if(IRS.waiting){st.className='st ok';tx='等待 IRS 換到下一題…'}
+  else if(IRS.err){st.className='st bad';tx='連線問題：'+IRS.err}
+  else if(!IRS.lastOk){st.className='st';tx='連線中…'}
+  else{st.className='st ok';tx='已連線 · 每 2 秒更新'}
+  $('#irsStTxt').textContent=tx;
+  $('#irsNum').innerHTML=on&&IRS.q!=null?'IRS 第 <b>'+IRS.q+'</b> 題 · 已收到 <b>'+IRS.latest.length+'</b> / '+S.irs.cls+' 人':'';
+  var w=[],btns='';
+  if(on&&!isDone(S.track)&&IRS.q!=null){
+    if(IRS.conflict)w.push('IRS 第 '+IRS.q+' 題已經用在「'+esc(IRS.conflict)+'」。請按「IRS 下一題」開一題新的，再請學生作答。');
+    else if(cur.q!=null&&cur.q!==IRS.q){w.push('這一步用的是 IRS 第 '+cur.q+' 題的回應，但 IRS 現在是第 '+IRS.q+' 題。畫面保留原本的回應。');btns+='<button data-act="rebind">改用第 '+IRS.q+' 題的回應</button>'}
+    else{
+      if(cur.stale){w.push('IRS 第 '+IRS.q+' 題一開始就有 '+cur.irs.length+' 筆回應，可能是之前留下的（例如測試時的回答）。');btns+='<button class="primary" data-act="newq">開一題新的</button><button data-act="keepstale">是剛收的，保留</button>'}
+      if(cur.locked&&!same(IRS.latest,cur.irs)){w.push('結果公布後 IRS 又有變動（IRS 現有 '+IRS.latest.length+' 人，畫面計入 '+cur.irs.length+' 人）。');btns+='<button data-act="absorb">計入最新回應</button>'}
+    }
+  }
+  var box=$('#irsWarn'),html=w.join('<br>')+(btns?'<div>'+btns+'</div>':'');
+  box.hidden=!w.length;if(box.innerHTML!==html)box.innerHTML=html;
+  $('#irsNext').disabled=!on||IRS.pending;$('#irsClear').disabled=!on||IRS.pending;$('#irsWipe').disabled=!on||IRS.pending;
+}
+
+/* ---------- 事件 ---------- */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var cur=S.tracks[S.track].cur;
+  if(b.dataset.t){if(animating)return;S.track=b.dataset.t;cand=null;hideResult();stopTimer();T.left=S.secs;IRS.conflict='';save();render();irsPoll();return}
+  if(b.dataset.act){
+    var act=b.dataset.act;
+    if(act==='reveal'){cur.revealed=true;cur.locked=true}
+    else if(act==='rebind'){cur.q=IRS.q;cur.irs=[];cur.sub={};cur.locked=false;cur.revealed=false;cur.stale=false;cand=null;hideResult()}
+    else if(act==='keepstale'){cur.stale=false}
+    else if(act==='newq'){irsNext(true);return}
+    else if(act==='absorb'){cur.irs=IRS.latest.slice();cand=null;hideResult()}
+    save();render();if(act==='rebind')irsPoll();return}
+  if(b.dataset.pick!=null){pickManual(b.dataset.pick);renderChart();return}
+  if(b.dataset.inc!=null){cur.raws.push(b.dataset.inc);cand=null;hideResult();save();render();return}
+  if(b.dataset.dec!=null){
+    var removed=false;
+    for(var i=cur.raws.length-1;i>=0;i--){if(canon(cur,cur.raws[i])===b.dataset.dec){cur.raws.splice(i,1);removed=true;break}}
+    if(!removed)cur.sub[b.dataset.dec]=(cur.sub[b.dataset.dec]||0)+1;
+    cand=null;hideResult();save();render();return}
+  if(b.dataset.hide!=null){cur.hidden.push(b.dataset.hide);cand=null;hideResult();save();render();return}
+  if(b.dataset.show!=null){cur.hidden=cur.hidden.filter(function(x){return x!==b.dataset.show});cand=null;hideResult();save();render();return}
+});
+document.addEventListener('change',function(e){
+  var s=e.target;
+  if(s.dataset&&s.dataset.merge!=null&&s.value){
+    var cur=S.tracks[S.track].cur;cur.merge[s.dataset.merge]=s.value;
+    cand=null;hideResult();save();render();
+  }
+});
+$('#addOne').addEventListener('click',function(){var i=$('#one');addWords([i.value]);i.value='';i.focus()});
+$('#one').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('#addOne').click()}});
+$('#addPaste').addEventListener('click',function(){var p=$('#paste');addWords([p.value]);p.value=''});
+$('#demo').addEventListener('click',function(){
+  var tot=DEMO.reduce(function(s,x){return s+x[1]},0),out=[];
+  for(var i=0;i<24;i++){var r=Math.random()*tot,acc=0;for(var j=0;j<DEMO.length;j++){acc+=DEMO[j][1];if(r<acc){out.push(DEMO[j][0]);break}}}
+  addWords(out);
+});
+$('#clearStep').addEventListener('click',function(){var q=S.tracks[S.track].cur.q;S.tracks[S.track].cur=Object.assign(newCur(),{q:q});cand=null;hideResult();save();render();irsPoll()});
+$('#irsToggle').addEventListener('click',function(){irsSetOn(!IRS.on)});
+$('#irsNext').addEventListener('click',function(){irsNext(true)});
+$('#irsClear').addEventListener('click',function(){irsClear(this)});
+$('#irsUrl').addEventListener('change',function(){S.irs.url=this.value.trim();save()});
+$('#irsCls').addEventListener('change',function(){var v=parseInt(this.value,10);S.irs.cls=isNaN(v)?35:Math.max(1,Math.min(50,v));this.value=S.irs.cls;save();irsPoll()});
+$('#irsAuto').addEventListener('change',function(){S.irs.autoNext=this.checked;save()});
+$('#irsWipe').addEventListener('click',function(){irsWipe(this)});
+$('#irsHold').addEventListener('change',function(){S.irs.hold=this.checked;save();render()});
+$('#btnMax').addEventListener('click',pickMax);
+$('#btnDraw').addEventListener('click',pickDraw);
+$('#adopt').addEventListener('click',commit);
+$('#redo').addEventListener('click',function(){if(!cand)return;cand.method==='max'?pickMax():pickDraw()});
+$('#tstart').addEventListener('click',toggleTimer);
+$('#treset').addEventListener('click',function(){stopTimer();T.left=S.secs;drawTimer()});
+$('#btnEdit').addEventListener('click',function(){editMode=!editMode;this.setAttribute('aria-pressed',editMode);this.textContent=editMode?'完成編輯':'編輯模式（＋1／合併／隱藏）';renderChart()});
+$('#btnBig').addEventListener('click',function(){var on=document.documentElement.classList.toggle('big');this.setAttribute('aria-pressed',on);this.textContent=on?'還原大小':'投影模式（放大）'});
+/* 開始新的一輪：清除本頁接龍紀錄（保留起始句與 IRS 設定）；若已連線 IRS，順便開一題新的，避免抓到舊回應 */
+function newRound(){
+  var keep={start:S.start,sharedN:S.sharedN,branchN:S.branchN,secs:S.secs,irs:S.irs};
+  S=fresh();S.start=keep.start;S.sharedN=keep.sharedN;S.branchN=keep.branchN;S.secs=keep.secs;S.irs=keep.irs;
+  IRS.conflict='';IRS.waiting=false;
+  cand=null;hideResult();stopTimer();T.left=S.secs;$('#resume').hidden=true;
+  save();render();
+  if(IRS.on)irsNext(false);
+  flash(IRS.on?'已清除接龍紀錄，並在 IRS 開了一題新的。':'已清除接龍紀錄。連線 IRS 後，若目前題目已有舊回應會提醒你。');
+}
+var RESET_LABEL='清除紀錄，開始新的一輪';
+$('#btnReset').addEventListener('click',function(){
+  var b=this;
+  if(!resetArmed){resetArmed=true;b.classList.add('armed');b.textContent='再按一次確認清除';setTimeout(function(){resetArmed=false;b.classList.remove('armed');b.textContent=RESET_LABEL},4000);return}
+  resetArmed=false;b.classList.remove('armed');b.textContent=RESET_LABEL;newRound();
+});
+$('#btnNewRound').addEventListener('click',newRound);
+$('#btnKeep').addEventListener('click',function(){$('#resume').hidden=true});
+function numSet(id,key,min,max){$(id).addEventListener('change',function(){
+  var v=parseInt(this.value,10);if(isNaN(v))v=S[key];S[key]=Math.max(min,Math.min(max,v));
+  if(key==='secs'){stopTimer();T.left=S.secs}
+  save();render()})}
+numSet('#setShared','sharedN',1,3);numSet('#setBranch','branchN',1,6);numSet('#setSecs','secs',10,300);
+$('#setStart').addEventListener('input',function(){S.start=this.value;save();$('#sentence').innerHTML=sentenceHTML(S.track);renderCompare()});
+
+$('#irsUrl').value=S.irs.url;$('#irsCls').value=S.irs.cls;$('#irsAuto').checked=S.irs.autoNext;$('#irsHold').checked=S.irs.hold;
+(function(){
+  var n=['shared','A','B'].reduce(function(k,t){return k+S.tracks[t].steps.length},0);
+  var r=['shared','A','B'].reduce(function(k,t){return k+S.tracks[t].cur.raws.length},0);
+  if(n||r){$('#resumeTxt').textContent='已載入上次的接龍紀錄（已接 '+n+' 個詞）。要接著上次繼續，還是清除後開始新的一輪？';$('#resume').hidden=false}
+})();
+render();
+if(S.irs.on)irsSetOn(true);
+})();
+</script>
+</body>
+</html>

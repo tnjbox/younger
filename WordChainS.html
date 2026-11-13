@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文字接龍 - 學生端</title>
+<style>
+  body { font-family: 'Microsoft JhengHei', Arial, sans-serif; background-color: #f4f6f9; padding: 15px; margin: 0; display: flex; justify-content: center; }
+  .card { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+  h2 { text-align: center; color: #333; margin-top: 0; font-size: 24px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+  .row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; margin-bottom: 15px; }
+  label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+  input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+  input:focus { outline: none; border-color: #e67e22; }
+  .tip { background: #fdf2e9; color: #6e3b0e; border-radius: 10px; padding: 12px 14px; font-size: 16px; line-height: 1.6; margin: 18px 0 14px; }
+  .tip b { color: #333; }
+  #word { font-size: 28px; font-weight: bold; text-align: center; padding: 14px; letter-spacing: 2px; }
+  .count { text-align: right; color: #7f8c8d; font-size: 14px; margin-top: 4px; }
+  .submit-btn { width: 100%; margin-top: 12px; padding: 16px; font-size: 20px; font-weight: bold; color: white; background-color: #e67e22; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: inherit; }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+  #msg { text-align: center; margin-top: 16px; font-weight: bold; font-size: 18px; min-height: 26px; line-height: 1.5; }
+  .success { color: #1e8449; }
+  .sending { color: #b9770e; }
+  .error { color: #c0392b; }
+  .last { text-align: center; color: #7f8c8d; font-size: 15px; margin-top: 6px; min-height: 22px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>✏️ 文字接龍</h2>
+
+  <div class="row">
+    <div>
+      <label for="seat">座號 (1~50)</label>
+      <input type="number" id="seat" min="1" max="50" inputmode="numeric" placeholder="座號">
+    </div>
+    <div>
+      <label for="name">姓名 (選填)</label>
+      <input type="text" id="name" placeholder="老師已建檔可免填">
+    </div>
+  </div>
+
+  <div class="tip">看投影幕上的句子，猜猜看<b>「下一個詞」</b>是什麼？<br><b>只寫一個詞</b>，例如：看見、一隻、突然。</div>
+
+  <label for="word">下一個詞</label>
+  <input type="text" id="word" maxlength="10" autocomplete="off" placeholder="寫一個詞">
+  <div class="count" id="count">0 / 10 字</div>
+
+  <button type="button" id="btnSend" class="submit-btn">📤 送出</button>
+  <div id="msg" role="status"></div>
+  <div class="last" id="last"></div>
+</div>
+
+<script>
+  // 🔗 與原本 IRS 相同的 GAS 網址
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzcTuJoyN0kBI1bmmGmxOVoQCpMA2haE0ZAUHbDVEW6KVM85kTTm507JJIcMhXCFsOf/exec";
+
+  const $ = id => document.getElementById(id);
+  try {
+    if (localStorage.getItem('student_seat')) $('seat').value = localStorage.getItem('student_seat');
+    if (localStorage.getItem('student_name')) $('name').value = localStorage.getItem('student_name');
+  } catch (e) {}
+
+  function show(text, cls) { $('msg').textContent = text; $('msg').className = cls || ''; }
+
+  $('word').addEventListener('input', () => { $('count').textContent = $('word').value.trim().length + ' / 10 字'; });
+  $('word').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+  $('btnSend').addEventListener('click', send);
+
+  function send() {
+    const seat = parseInt($('seat').value, 10);
+    const name = $('name').value.trim();
+    const word = $('word').value.replace(/\s+/g, '');
+
+    if (isNaN(seat) || seat < 1 || seat > 50) { show('⚠️ 請先填座號（1 到 50）', 'error'); $('seat').focus(); return; }
+    if (!word) { show('⚠️ 請先寫一個詞', 'error'); $('word').focus(); return; }
+
+    try {
+      localStorage.setItem('student_seat', seat);
+      localStorage.setItem('student_name', name);
+    } catch (e) {}
+
+    const params = new URLSearchParams();
+    params.append('action', 'submitText');
+    params.append('seat', seat);
+    params.append('name', name);
+    params.append('textResponse', word);
+    params.append('t', Date.now());
+
+    $('btnSend').disabled = true;
+    show('🚀 傳送中...', 'sending');
+
+    fetch(`${GAS_URL}?${params.toString()}`)
+      .then(r => r.json())
+      .then(result => {
+        if (result && result.status === 'success') {
+          show('✅ 送出成功！看投影幕等老師公布', 'success');
+          $('last').textContent = '你剛剛寫的是：「' + word + '」';
+          $('word').value = '';
+          $('count').textContent = '0 / 10 字';
+        } else {
+          show('❌ 送出失敗，請再按一次', 'error');
+        }
+      })
+      .catch(() => show('❌ 傳送失敗，請確認網路後再按一次', 'error'))
+      .finally(() => { $('btnSend').disabled = false; });
+  }
+</script>
+
+</body>
+</html>
